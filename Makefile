@@ -32,11 +32,20 @@ kernel.o: kernel/kernel.c
 vga.o: kernel/vga.c kernel/vga.h
 	$(CC) $(CFLAGS) -c kernel/vga.c -o vga.o
 
+interrupt.o: kernel/interrupt.asm
+	$(NASM) -f elf32 kernel/interrupt.asm -o interrupt.o
 
-kernel.elf: kernel_entry.o kernel.o vga.o linker.ld
+idt.o: kernel/idt.c kernel/idt.h
+	$(CC) $(CFLAGS) -c kernel/idt.c -o idt.o
+
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
-		kernel_entry.o kernel.o vga.o
+		kernel_entry.o \
+		kernel.o \
+		vga.o \
+		idt.o \
+		interrupt.o
 
 
 kernel.bin: kernel.elf
@@ -62,4 +71,6 @@ clean:
 		vga.o \
 		kernel.elf \
 		kernel.bin \
-		banana.img 
+		banana.img \
+		idt.o \
+		interrupt.o \
