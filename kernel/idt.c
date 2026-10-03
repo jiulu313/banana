@@ -38,6 +38,7 @@ static struct idt_ptr idtp;
 //interrupt.asm 汇编中定义的函数
 extern void idt_load(struct idt_ptr *ptr);
 extern void isr80(void);
+extern void isr0(void);
 
 
 static void idt_set_gate(
@@ -78,6 +79,14 @@ void idt_init(void)
         0x8E
     );
 
+    //除数是0的中断，安装处理函数
+    idt_set_gate(
+        0x00,
+        (unsigned int)isr0,
+        0x08,
+        0x8E
+    );
+
     //给CPU中的IDTR寄存器准备数据 
     idtp.limit = sizeof(idt) - 1;
     idtp.base = (unsigned int)&idt;
@@ -86,7 +95,17 @@ void idt_init(void)
 }
 
 
+//0x80中断处理函数
 void interrupt_handler(void)
 {
     vga_write("\ninterrupt 0x80 received\n");
+}
+
+//除数为0的中断处理函数
+void divide_error_handler(void) 
+{
+    vga_write("\nDivide Error exception!\n");
+    while(1) {
+
+    }
 }

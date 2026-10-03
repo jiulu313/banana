@@ -2,10 +2,11 @@ bits 32
 
 global idt_load
 global isr80
+global isr0
 
 
 extern interrupt_handler
-
+extern divide_error_handler
 
 
 ;加载idt的函数
@@ -21,9 +22,31 @@ idt_load:
     ret 
 
 
-;真正的中断入口函数
+;INT 0x80的中断真正的中断入口
 isr80:
     pusha
     call interrupt_handler
     popa
     iret    
+
+
+;除数是0的中断处理入口 
+isr0:
+    pusha 
+    call divide_error_handler  ;除数是0的中断处理函数，比如  5/0
+    popa
+    iret
+
+
+
+
+
+
+
+
+
+
+
+
+
+

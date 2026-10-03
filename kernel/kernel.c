@@ -20,7 +20,17 @@ void kernel_main(void)
         "int $0x80"
     );
 
-    vga_write("returned from interrupt\n");
+    vga_write("returned from interrupt...\n");
+
+
+
+    //产生除数为0的中断
+    volatile int a = 10;
+    volatile int b = 0;
+    volatile int c = a / b;
+
+
+    vga_write("You should never see this\n");
 
     while (1) {
     }
