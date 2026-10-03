@@ -1,0 +1,65 @@
+NASM = nasm
+CC = gcc
+LD = ld
+OBJCOPY = objcopy
+
+CFLAGS = -m32 \
+         -ffreestanding \
+         -fno-pie \
+         -fno-stack-protector \
+         -fno-builtin
+
+LDFLAGS = -m elf_i386 -T linker.ld
+
+all: banana.img
+
+
+boot.bin: boot/boot.asm
+	$(NASM) -f bin boot/boot.asm -o boot.bin
+
+
+stage2.bin: boot/stage2.asm
+	$(NASM) -f bin boot/stage2.asm -o stage2.bin
+
+
+kernel_entry.o: kernel/kernel_entry.asm
+	$(NASM) -f elf32 kernel/kernel_entry.asm -o kernel_entry.o
+
+
+kernel.o: kernel/kernel.c
+	$(CC) $(CFLAGS) -c kernel/kernel.c -o kernel.o
+
+vga.o: kernel/vga.c kernel/vga.h
+	$(CC) $(CFLAGS) -c kernel/vga.c -o vga.o
+
+
+kernel.elf: kernel_entry.o kernel.o vga.o linker.ld
+	$(LD) $(LDFLAGS) \
+		-o kernel.elf \
+		kernel_entry.o kernel.o vga.o
+
+
+kernel.bin: kernel.elf
+	$(OBJCOPY) -O binary kernel.elf kernel.bin
+	truncate -s 4096 kernel.bin
+
+
+banana.img: boot.bin stage2.bin kernel.bin
+	cat boot.bin stage2.bin kernel.bin > banana.img
+	truncate -s 1M banana.img
+
+
+run: banana.img
+	qemu-system-i386 -drive format=raw,file=banana.img
+
+
+clean:
+	rm -f \
+		boot.bin \
+		stage2.bin \
+		kernel_entry.o \
+		kernel.o \
+		vga.o \
+		kernel.elf \
+		kernel.bin \
+		banana.img 
