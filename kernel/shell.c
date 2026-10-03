@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "vga.h"
 #include "timer.h"
+#include "memory.h"
 
 #define INPUT_BUFFER_SIZE 128
 
@@ -46,7 +47,14 @@ static void shell_execute(const char *command)
         vga_write("ticks:");
         vga_write_hex(timer_get_ticks());
         vga_write("\n");
-    } else if (command[0] == '\0') {
+    } else if (str_equal(command,"alloc")){
+        void *ptr = kmalloc(64);
+
+        vga_write("allocated at: ");
+        vga_write_hex((unsigned int)ptr);
+        vga_write("\n");
+    } 
+    else if (command[0] == '\0') {
         // 空命令，不做任何事情
     } else {
         vga_write("unknown command: ");

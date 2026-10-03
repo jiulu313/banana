@@ -53,8 +53,11 @@ keyboard.o: kernel/keyboard.c kernel/keyboard.h kernel/io.h kernel/pic.h kernel/
 shell.o: kernel/shell.c kernel/shell.h kernel/vga.h
 	$(CC) $(CFLAGS) -c kernel/shell.c -o shell.o
 
+memory.o: kernel/memory.c kernel/memory.h
+	$(CC) $(CFLAGS) -c kernel/memory.c -o memory.o
 
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o  shell.o linker.ld
+
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o  shell.o memory.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -65,7 +68,8 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keybo
 		pic.o \
 		timer.o \
 		keyboard.o \
-		shell.o
+		shell.o \
+		memory.o
 
 
 
@@ -98,4 +102,5 @@ clean:
 		pic.o \
 		timer.o \
 		keyboard.o \
-		shell.o
+		shell.o \
+		memory.o
