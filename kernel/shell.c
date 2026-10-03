@@ -2,6 +2,7 @@
 #include "vga.h"
 #include "timer.h"
 #include "memory.h"
+#include "e820.h"
 
 #define INPUT_BUFFER_SIZE 128
 
@@ -88,6 +89,8 @@ static void shell_execute(const char *command)
             vga_write_hex((unsigned int)b);
             vga_write("\n");
         }
+    } else if (str_equal(command,"memmap")) {
+        e820_print_map();//调用BIOS e820打印内存情况 
     }
     else if (command[0] == '\0') {
         // 空命令，不做任何事情
