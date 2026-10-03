@@ -61,13 +61,27 @@ void vga_clear(void)
 
 void vga_putc(char c)
 {
-    if (c == '\n') {
+    if (c == '\n') { //回车键
         cursor_col = 0;
         cursor_row++;
 
         vga_scroll();
         return;
     }
+
+    if (c == '\b') //删除键
+    {
+        if (cursor_col > 0) {
+            cursor_col--;
+
+            int index =
+                (cursor_row * VGA_WIDTH + cursor_col) * 2;
+
+            vga[index] = ' ';
+            vga[index + 1] = VGA_COLOR;
+        }
+    }
+    
 
     int index = (cursor_row * VGA_WIDTH + cursor_col) * 2;
 
