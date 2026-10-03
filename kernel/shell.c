@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "vga.h"
+#include "timer.h"
 
 #define INPUT_BUFFER_SIZE 128
 
@@ -41,6 +42,10 @@ static void shell_execute(const char *command)
         vga_clear();
     } else if (str_equal(command, "version")) {
         vga_write("banana OS 0.1\n");
+    } else if (str_equal(command,"ticks")){
+        vga_write("ticks:");
+        vga_write_hex(timer_get_ticks());
+        vga_write("\n");
     } else if (command[0] == '\0') {
         // 空命令，不做任何事情
     } else {

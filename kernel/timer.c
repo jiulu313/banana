@@ -24,10 +24,17 @@ void timer_handler(void)
 {
     ticks++;
 
-    if ((ticks % 100) == 0) {
-        vga_write("tick\n");
-    }
+    //注释掉
+    // if ((ticks % 100) == 0) {
+    //     vga_write("tick\n");
+    // }
 
     //“IRQ0 我处理完了，你可以继续接收下一次 IRQ0。”
     pic_send_eoi(0);
+}
+
+//返回系统已经运行了多少 tick
+unsigned int timer_get_ticks(void) 
+{
+    return ticks;
 }
