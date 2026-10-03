@@ -12,9 +12,6 @@
 //重新映射
 void pic_remap(void)
 {
-    unsigned char mask1 = inb(PIC1_DATA);
-    unsigned char mask2 = inb(PIC2_DATA);
-
     outb(PIC1_COMMAND, 0x11);
     outb(PIC2_COMMAND, 0x11);
 
@@ -27,8 +24,11 @@ void pic_remap(void)
     outb(PIC1_DATA, 0x01);
     outb(PIC2_DATA, 0x01);
 
-    outb(PIC1_DATA, mask1);
-    outb(PIC2_DATA, mask2);
+    // IRQ0 timer + IRQ1 keyboard
+    outb(PIC1_DATA, 0xFC);
+
+    // IRQ8~15 暂时全部关闭
+    outb(PIC2_DATA, 0xFF);
 }
 
 void pic_send_eoi(unsigned char irq)

@@ -19,6 +19,7 @@ void timer_init(unsigned int frequency)
     outb(PIT_CHANNEL0, (divisor >> 8) & 0xFF);
 }
 
+//timer处理函数
 void timer_handler(void)
 {
     ticks++;

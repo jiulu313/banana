@@ -3,7 +3,8 @@
 
 #define IDT_ENTRIES 256
 
-extern void irq0(void);
+extern void irq0(void); //timer函数
+extern void irq1(void); //键盘函数
 
 //  8个字节 ，64位 [ 0 - 63 ]，结构如下：
 //
@@ -23,8 +24,8 @@ struct idt_entry
 } __attribute__((packed));
 
 
-//专门给CPU的 lidt 指令准备的数据结构
-//它对应的是CPU内部 IDTR 寄存器需要的格式 
+// 专门给CPU的 lidt 指令准备的数据结构
+// 它对应的是CPU内部 IDTR 寄存器需要的格式 
 // 共6个字节 
 struct idt_ptr
 {
@@ -205,6 +206,7 @@ void idt_init(void)
     idt_set_gate(0x80, (unsigned int)isr80, 0x08, 0x8E);
 
     idt_set_gate(32,(unsigned int)irq0,0x08,0x8E);
+    idt_set_gate(33,(unsigned int)irq1,0x08,0x8E);
 
     //给CPU中的IDTR寄存器准备数据 
     idtp.limit = sizeof(idt) - 1;

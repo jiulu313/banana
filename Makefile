@@ -46,7 +46,11 @@ timer.o: kernel/timer.c kernel/timer.h kernel/io.h kernel/pic.h kernel/vga.h
 	$(CC) $(CFLAGS) -c kernel/timer.c -o timer.o
 
 
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o linker.ld
+keyboard.o: kernel/keyboard.c kernel/keyboard.h kernel/io.h kernel/pic.h kernel/vga.h
+	$(CC) $(CFLAGS) -c kernel/keyboard.c -o keyboard.o
+
+
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -55,13 +59,14 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o linke
 		idt.o \
 		interrupt.o \
 		pic.o \
-		timer.o
+		timer.o \
+		keyboard.o
 
 
 
 kernel.bin: kernel.elf
 	$(OBJCOPY) -O binary kernel.elf kernel.bin
-	truncate -s 4096 kernel.bin
+	truncate -s 8192 kernel.bin
 
 
 banana.img: boot.bin stage2.bin kernel.bin
@@ -86,4 +91,5 @@ clean:
 		idt.o \
 		interrupt.o \
 		pic.o \
-		timer.o
+		timer.o \
+		keyboard.o

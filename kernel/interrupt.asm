@@ -2,8 +2,13 @@ bits 32
 
 global idt_load
 
+;timer中断处理
 global irq0
 extern timer_handler
+
+;键盘中断处理
+global irq1
+extern keyboard_handler
 
 extern exception_handler
 extern interrupt_handler
@@ -115,5 +120,12 @@ isr80:
 irq0:
     pusha
     call timer_handler
+    popa
+    iret     
+
+
+irq1:
+    pusha
+    call keyboard_handler
     popa
     iret     
