@@ -35,7 +35,7 @@ static struct idt_entry idt[IDT_ENTRIES];   //中断数组
 
 static struct idt_ptr idtp; 
 
-
+//interrupt.asm 汇编中定义的函数
 extern void idt_load(struct idt_ptr *ptr);
 extern void isr80(void);
 
