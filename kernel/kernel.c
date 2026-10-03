@@ -12,23 +12,11 @@ void kernel_main(void)
     idt_init();
 
     vga_write("IDT initialized\n");
+    vga_write("Trigger invalid opcode...\n");
 
-
-    //C 里嵌入汇编
-    // int 0x80
     __asm__ volatile (
-        "int $0x80"
+        "ud2"
     );
-
-    vga_write("returned from interrupt...\n");
-
-
-
-    //产生除数为0的中断
-    volatile int a = 10;
-    volatile int b = 0;
-    volatile int c = a / b;
-
 
     vga_write("You should never see this\n");
 

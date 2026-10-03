@@ -37,8 +37,104 @@ static struct idt_ptr idtp;
 
 //interrupt.asm 汇编中定义的函数
 extern void idt_load(struct idt_ptr *ptr);
-extern void isr80(void);
+
+// 声明中断异常入口 
 extern void isr0(void);
+extern void isr1(void);
+extern void isr2(void);
+extern void isr3(void);
+extern void isr4(void);
+extern void isr5(void);
+extern void isr6(void);
+extern void isr7(void);
+extern void isr8(void);
+extern void isr9(void);
+extern void isr10(void);
+extern void isr11(void);
+extern void isr12(void);
+extern void isr13(void);
+extern void isr14(void);
+extern void isr15(void);
+extern void isr16(void);
+extern void isr17(void);
+extern void isr18(void);
+extern void isr19(void);
+extern void isr20(void);
+extern void isr21(void);
+extern void isr22(void);
+extern void isr23(void);
+extern void isr24(void);
+extern void isr25(void);
+extern void isr26(void);
+extern void isr27(void);
+extern void isr28(void);
+extern void isr29(void);
+extern void isr30(void);
+extern void isr31(void);
+
+extern void isr80(void);
+
+
+
+
+// 中断异常信息
+static const char *exception_messages[] =
+{
+    "Divide Error",
+    "Debug",
+    "NMI",
+    "Breakpoint",
+    "Overflow",
+    "Bound Range Exceeded",
+    "Invalid Opcode",
+    "Device Not Available",
+    "Double Fault",
+    "Coprocessor Segment Overrun",
+    "Invalid TSS",
+    "Segment Not Present",
+    "Stack Fault",
+    "General Protection Fault",
+    "Page Fault",
+    "Reserved",
+    "x87 Floating Point",
+    "Alignment Check",
+    "Machine Check",
+    "SIMD Floating Point",
+    "Virtualization",
+    "Control Protection",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Hypervisor Injection",
+    "VMM Communication",
+    "Security",
+    "Reserved"
+};
+
+
+//描述栈上的内容的
+struct interrupt_frame
+{
+    unsigned int edi;
+    unsigned int esi;
+    unsigned int ebp;
+    unsigned int esp;
+    unsigned int ebx;
+    unsigned int edx;
+    unsigned int ecx;
+    unsigned int eax;
+
+    unsigned int int_no;
+    unsigned int err_code;
+
+    unsigned int eip;
+    unsigned int cs;
+    unsigned int eflags;
+};
+
 
 
 static void idt_set_gate(
@@ -70,22 +166,41 @@ void idt_init(void)
         idt[i].offset_high = 0;
     }
 
-    //给 IDT 的第 0x80 项，安装一个中断门，它的处理函数是 isr80
-    //调用时，INT 0x80,就会走到isr80
-    idt_set_gate(
-        0x80,
-        (unsigned int)isr80,
-        0x08,
-        0x8E
-    );
+    //安装中断入口
+    idt_set_gate(0,  (unsigned int)isr0,  0x08, 0x8E);
+    idt_set_gate(1,  (unsigned int)isr1,  0x08, 0x8E);
+    idt_set_gate(2,  (unsigned int)isr2,  0x08, 0x8E);
+    idt_set_gate(3,  (unsigned int)isr3,  0x08, 0x8E);
+    idt_set_gate(4,  (unsigned int)isr4,  0x08, 0x8E);
+    idt_set_gate(5,  (unsigned int)isr5,  0x08, 0x8E);
+    idt_set_gate(6,  (unsigned int)isr6,  0x08, 0x8E);
+    idt_set_gate(7,  (unsigned int)isr7,  0x08, 0x8E);
+    idt_set_gate(8,  (unsigned int)isr8,  0x08, 0x8E);
+    idt_set_gate(9,  (unsigned int)isr9,  0x08, 0x8E);
+    idt_set_gate(10, (unsigned int)isr10, 0x08, 0x8E);
+    idt_set_gate(11, (unsigned int)isr11, 0x08, 0x8E);
+    idt_set_gate(12, (unsigned int)isr12, 0x08, 0x8E);
+    idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
+    idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
+    idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
+    idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
+    idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
+    idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
+    idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
+    idt_set_gate(20, (unsigned int)isr20, 0x08, 0x8E);
+    idt_set_gate(21, (unsigned int)isr21, 0x08, 0x8E);
+    idt_set_gate(22, (unsigned int)isr22, 0x08, 0x8E);
+    idt_set_gate(23, (unsigned int)isr23, 0x08, 0x8E);
+    idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
+    idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
+    idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
+    idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
+    idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
+    idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
+    idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
+    idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
 
-    //除数是0的中断，安装处理函数
-    idt_set_gate(
-        0x00,
-        (unsigned int)isr0,
-        0x08,
-        0x8E
-    );
+    idt_set_gate(0x80, (unsigned int)isr80, 0x08, 0x8E);
 
     //给CPU中的IDTR寄存器准备数据 
     idtp.limit = sizeof(idt) - 1;
@@ -109,3 +224,31 @@ void divide_error_handler(void)
 
     }
 }
+
+
+void exception_handler(struct interrupt_frame *frame)
+{
+
+    vga_write("\nCPU Exception: ");
+
+    vga_write_hex(frame->int_no);
+
+    vga_write("\n");
+
+    if (frame->int_no < 32) {
+        vga_write(exception_messages[frame->int_no]);
+        vga_write("\n");
+    }
+
+    vga_write("Error code: ");
+    vga_write_hex(frame->err_code);
+    vga_write("\n");
+
+    vga_write("EIP: ");
+    vga_write_hex(frame->eip);
+    vga_write("\n");
+
+    while (1) {
+    }
+}
+
