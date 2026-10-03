@@ -1,6 +1,7 @@
 #include "vga.h"
 #include "idt.h"
-
+#include "pic.h"
+#include "timer.h"
 
 void kernel_main(void)
 {
@@ -12,14 +13,20 @@ void kernel_main(void)
     idt_init();
 
     vga_write("IDT initialized\n");
-    vga_write("Trigger invalid opcode...\n");
 
-    __asm__ volatile (
-        "ud2"
-    );
+    pic_remap();
 
-    vga_write("You should never see this\n");
+    vga_write("PIC remapped\n");
+
+    timer_init(100);
+
+    vga_write("PIT initialized\n");
+
+    __asm__ volatile ("sti");
+
+    vga_write("interrupts enabled\n");
 
     while (1) {
+        __asm__ volatile ("hlt");
     }
 }

@@ -3,6 +3,8 @@
 
 #define IDT_ENTRIES 256
 
+extern void irq0(void);
+
 //  8个字节 ，64位 [ 0 - 63 ]，结构如下：
 //
 //  63                         48 47              40 39      32 31              16 15               0
@@ -201,6 +203,8 @@ void idt_init(void)
     idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
 
     idt_set_gate(0x80, (unsigned int)isr80, 0x08, 0x8E);
+
+    idt_set_gate(32,(unsigned int)irq0,0x08,0x8E);
 
     //给CPU中的IDTR寄存器准备数据 
     idtp.limit = sizeof(idt) - 1;

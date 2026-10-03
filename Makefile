@@ -38,14 +38,25 @@ interrupt.o: kernel/interrupt.asm
 idt.o: kernel/idt.c kernel/idt.h
 	$(CC) $(CFLAGS) -c kernel/idt.c -o idt.o
 
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o linker.ld
+
+pic.o: kernel/pic.c kernel/pic.h kernel/io.h
+	$(CC) $(CFLAGS) -c kernel/pic.c -o pic.o
+
+timer.o: kernel/timer.c kernel/timer.h kernel/io.h kernel/pic.h kernel/vga.h
+	$(CC) $(CFLAGS) -c kernel/timer.c -o timer.o
+
+
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
 		kernel.o \
 		vga.o \
 		idt.o \
-		interrupt.o
+		interrupt.o \
+		pic.o \
+		timer.o
+
 
 
 kernel.bin: kernel.elf
@@ -74,3 +85,5 @@ clean:
 		banana.img \
 		idt.o \
 		interrupt.o \
+		pic.o \
+		timer.o

@@ -2,6 +2,9 @@ bits 32
 
 global idt_load
 
+global irq0
+extern timer_handler
+
 extern exception_handler
 extern interrupt_handler
 
@@ -104,9 +107,13 @@ global isr80
 
 isr80:
     pusha
-
     call interrupt_handler
-
     popa
-
     iret
+
+
+irq0:
+    pusha
+    call timer_handler
+    popa
+    iret     
