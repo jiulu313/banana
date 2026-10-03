@@ -60,8 +60,10 @@ memory.o: kernel/memory.c kernel/memory.h
 e820.o: kernel/e820.c kernel/e820.h kernel/vga.h
 	$(CC) $(CFLAGS) -c kernel/e820.c -o e820.o
 
+pmm.o: kernel/pmm.c kernel/pmm.h kernel/e820.h kernel/memory.h
+	$(CC) $(CFLAGS) -c kernel/pmm.c -o pmm.o
 
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o  shell.o memory.o e820.o linker.ld
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o  shell.o memory.o e820.o pmm.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -74,13 +76,14 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keybo
 		keyboard.o \
 		shell.o \
 		memory.o \
-		e820.o
+		e820.o \
+		pmm.o
 
 
 
 kernel.bin: kernel.elf
 	$(OBJCOPY) -O binary kernel.elf kernel.bin
-	truncate -s 8192 kernel.bin
+	truncate -s 16384 kernel.bin
 
 
 banana.img: boot.bin stage2.bin kernel.bin
@@ -109,4 +112,5 @@ clean:
 		keyboard.o \
 		shell.o \
 		memory.o \
-		e820.o
+		e820.o \
+		pmm.o

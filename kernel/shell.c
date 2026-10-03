@@ -3,6 +3,7 @@
 #include "timer.h"
 #include "memory.h"
 #include "e820.h"
+#include "pmm.h"
 
 #define INPUT_BUFFER_SIZE 128
 
@@ -91,7 +92,26 @@ static void shell_execute(const char *command)
         }
     } else if (str_equal(command,"memmap")) {
         e820_print_map();//调用BIOS e820打印内存情况 
+    } else if(str_equal(command,"page")){
+        void *page = pmm_alloc_page();
+
+        if (page == 0) {
+            vga_write("page allocation failed\n");
+        } else {
+            vga_write("page: ");
+            vga_write_hex((unsigned int)page);
+            vga_write("\n");
+        }
+    } else if (str_equal(command,"meminfo")){
+        vga_write("total pages: ");
+        vga_write_hex(pmm_get_total_pages());
+        vga_write("\n");
+
+        vga_write("free pages: ");
+        vga_write_hex(pmm_get_free_pages());
+        vga_write("\n");
     }
+
     else if (command[0] == '\0') {
         // 空命令，不做任何事情
     } else {

@@ -14,7 +14,7 @@ CODE_SEG equ 0x08
 DATA_SEG equ 0x10
 
 KERNEL_SEGMENT equ 0x1000
-KERNEL_SECTORS equ 16
+KERNEL_SECTORS equ 32
 
 start:
 
@@ -42,7 +42,7 @@ start:
 
     ;read disk
     mov ah, 0x02
-    mov al, KERNEL_SECTORS      ;读16个扇区
+    mov al, KERNEL_SECTORS      ;读32个扇区
 
     mov ch, 0x00
     mov dh, 0x00

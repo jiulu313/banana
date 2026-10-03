@@ -4,6 +4,7 @@
 #include "timer.h"
 #include "shell.h"
 #include "memory.h"
+#include "pmm.h"
 
 void kernel_main(void)
 {
@@ -15,6 +16,8 @@ void kernel_main(void)
     timer_init(100);
 
     memory_init();
+
+    pmm_init();
 
     shell_init();
 
