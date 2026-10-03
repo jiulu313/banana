@@ -2,15 +2,9 @@
 #include "io.h"
 #include "pic.h"
 #include "vga.h"
-
-#define KEYBOARD_DATA_PORT 0x60
-
+#include "shell.h"
 
 
-#include "keyboard.h"
-#include "io.h"
-#include "pic.h"
-#include "vga.h"
 
 //x86 传统 PS/2 键盘控制器的数据端口是：0x60
 #define KEYBOARD_DATA_PORT 0x60
@@ -73,7 +67,7 @@ void keyboard_handler(void)
         char c = scancode_table[scancode];
 
         if (c != 0) {
-            vga_putc(c);
+            shell_input_char(c); //发给shell,决定如何处理
         }
     }
 

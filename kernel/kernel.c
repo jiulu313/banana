@@ -2,6 +2,7 @@
 #include "idt.h"
 #include "pic.h"
 #include "timer.h"
+#include "shell.h"
 
 void kernel_main(void)
 {
@@ -21,6 +22,8 @@ void kernel_main(void)
     timer_init(100);
 
     vga_write("PIT initialized\n");
+
+    shell_init();
 
     __asm__ volatile ("sti");
 
