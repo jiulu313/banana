@@ -70,33 +70,48 @@ protected_mode:
 
     mov esp, 0x90000
 
-    ; 直接写 VGA 文本显存，直接在0xb8000位置写，就可以直接操作显存，就可以显示出来
-    ; 屏幕上每个显示的字符，需要2个字节，第1个是ASCII码，第2个是颜色属性
-    ; 0X0F，可以分为高4位，低4位。其中高4位表示背景色，低4位表示前景色
-    ; 0x0F,代表背景是黑色，前景是白色，也就是黑底白字
-    mov byte [0xb8000], 'B'
-    mov byte [0xb8001], 0x0f
+    mov esi, message
+    call print_string
 
-    mov byte [0xb8002], 'A'
-    mov byte [0xb8003], 0x0f
+.halt:
+    cli
+    hlt
+    jmp .halt
 
-    mov byte [0xb8004], 'N'
-    mov byte [0xb8005], 0x0f
 
-    mov byte [0xb8006], 'A'
-    mov byte [0xb8007], 0x0ff
+print_string:
+    mov edi, 0xb8000
 
-    mov byte [0xb8008], 'N'
-    mov byte [0xb8009], 0x0f
+.next_char:
+    lodsb
 
-    mov byte [0xb800a], 'A'
-    mov byte [0xb800b], 0x0f
+    test al, al
+    jz .done
+
+    mov byte [edi], al 
+    mov byte [edi + 1], 0x0f
+
+    add edi, 2
+
+    jmp .next_char
+
+.done:
+    ret
+
+
+message:
+    db "Welcome to banana 32-bit protected mode!", 0
+    
+        
 
 
 .halt:
     cli
     hlt
     jmp .halt
+
+
+
 
 
 times 512 - ($ - $$) db 0
