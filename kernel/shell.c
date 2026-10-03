@@ -53,7 +53,42 @@ static void shell_execute(const char *command)
         vga_write("allocated at: ");
         vga_write_hex((unsigned int)ptr);
         vga_write("\n");
-    } 
+    } else if (str_equal(command,"memtest")){
+        char *a = (char *)kmalloc(32);
+        char *b = (char *)kmalloc(32);
+
+        if (a == 0 || b == 0) {
+            vga_write("kmalloc failed\n");
+        } else {
+
+            a[0] = 'B';
+            a[1] = 'A';
+            a[2] = 'N';
+            a[3] = 'A';
+            a[4] = 'N';
+            a[5] = 'A';
+            a[6] = '\0';
+
+            memset(b, 0, 32);
+            memcpy(b, a, 7);
+
+            vga_write("a: ");
+            vga_write(a);
+            vga_write("\n");
+
+            vga_write("b: ");
+            vga_write(b);
+            vga_write("\n");
+
+            vga_write("a addr: ");
+            vga_write_hex((unsigned int)a);
+            vga_write("\n");
+
+            vga_write("b addr: ");
+            vga_write_hex((unsigned int)b);
+            vga_write("\n");
+        }
+    }
     else if (command[0] == '\0') {
         // 空命令，不做任何事情
     } else {
