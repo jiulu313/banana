@@ -36,6 +36,32 @@ void kernel_main(void)
 
 
     /**
+     *  测试
+     */
+    void *physical = pmm_alloc_page();
+
+    vga_write("physical page: ");
+    vga_write_hex((unsigned int)physical);
+    vga_write("\n");
+
+  
+    map_page(
+        0x00400000,
+        (unsigned int)physical,
+        0x2
+    );
+
+    volatile unsigned int *p =
+        (volatile unsigned int *)0x00400000;
+
+    *p = 0x12345678;
+
+    vga_write("value: ");
+    vga_write_hex(*p);
+    vga_write("\n");
+
+
+    /**
      * 下面代码可以验证访问一个没有映射的地址，会报错
      * 
      *  vga_write("Trigger page fault...\n");

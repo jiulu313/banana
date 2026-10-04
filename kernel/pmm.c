@@ -87,9 +87,7 @@ void pmm_init(void)
 
 void *pmm_alloc_page(void)
 {
-    for (unsigned int page = 0;
-         page < MAX_PAGES;
-         page++) {
+    for (unsigned int page = 0; page < MAX_PAGES;page++) {
 
         if (!bitmap_test(page)) {
             bitmap_set(page);

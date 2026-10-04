@@ -3,4 +3,10 @@
 
 void paging_init(void);
 
+int map_page(
+    unsigned int virtual_address,
+    unsigned int physical_address,
+    unsigned int flags
+);
+
 #endif
