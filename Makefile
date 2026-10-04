@@ -59,7 +59,14 @@ e820.o: kernel/e820.c kernel/e820.h kernel/vga.h
 pmm.o: kernel/pmm.c kernel/pmm.h kernel/e820.h kernel/memory.h
 	$(CC) $(CFLAGS) -c kernel/pmm.c -o pmm.o
 
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o  shell.o memory.o e820.o pmm.o linker.ld
+
+paging.o: kernel/paging.c kernel/paging.h kernel/memory.h
+	$(CC) $(CFLAGS) -c kernel/paging.c -o paging.o
+
+
+
+
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o  shell.o memory.o e820.o pmm.o paging.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -73,7 +80,8 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keybo
 		shell.o \
 		memory.o \
 		e820.o \
-		pmm.o
+		pmm.o \
+		paging.o
 
 kernel.raw: kernel.elf
 	$(OBJCOPY) -O binary kernel.elf kernel.raw
@@ -126,4 +134,5 @@ clean:
 		e820.o \
 		pmm.o \
 		kernel.raw \
-		boot/kernel_sectors.inc
+		boot/kernel_sectors.inc \
+		paging.o
