@@ -14,7 +14,7 @@ CODE_SEG equ 0x08
 DATA_SEG equ 0x10
 
 KERNEL_SEGMENT equ 0x1000
-KERNEL_SECTORS equ 32
+%include "boot/kernel_sectors.inc"
 
 start:
 
