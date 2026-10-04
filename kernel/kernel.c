@@ -34,6 +34,23 @@ void kernel_main(void)
     //shell
     shell_init();
 
+
+    /**
+     * 下面代码可以验证访问一个没有映射的地址，会报错
+     * 
+     *  vga_write("Trigger page fault...\n");
+
+        volatile unsigned int *p =
+            (volatile unsigned int *)0x00400000;
+
+        unsigned int value = *p;
+
+        (void)value;
+
+        vga_write("You should never see this\n");
+     */
+
+
     //开启中断
     __asm__ volatile ("sti");
 
