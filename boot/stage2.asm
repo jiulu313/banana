@@ -42,7 +42,7 @@ start:
 
     ;read disk
     mov ah, 0x02
-    mov al, KERNEL_SECTORS      ;读32个扇区
+    mov al, KERNEL_SECTORS      ;读取多少个扇区
 
     mov ch, 0x00
     mov dh, 0x00

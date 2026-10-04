@@ -110,6 +110,38 @@ static void shell_execute(const char *command)
         vga_write("free pages: ");
         vga_write_hex(pmm_get_free_pages());
         vga_write("\n");
+    } else if (str_equal(command,"pagetest")) {
+        unsigned int before = pmm_get_free_pages();
+
+        void *a = pmm_alloc_page();
+        void *b = pmm_alloc_page();
+
+        unsigned int after_alloc = pmm_get_free_pages();
+
+        pmm_free_page(a);
+        pmm_free_page(b);
+
+        unsigned int after_free = pmm_get_free_pages();
+
+        vga_write("a: ");
+        vga_write_hex((unsigned int)a);
+        vga_write("\n");
+
+        vga_write("b: ");
+        vga_write_hex((unsigned int)b);
+        vga_write("\n");
+
+        vga_write("before    : ");
+        vga_write_hex(before);
+        vga_write("\n");
+
+        vga_write("after alloc: ");
+        vga_write_hex(after_alloc);
+        vga_write("\n");
+
+        vga_write("after free : ");
+        vga_write_hex(after_free);
+        vga_write("\n");
     }
 
     else if (command[0] == '\0') {
