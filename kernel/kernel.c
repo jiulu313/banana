@@ -36,7 +36,7 @@ void kernel_main(void)
 
 
     /**
-     *  测试
+     *  测试虚拟地址
      */
     void *physical = pmm_alloc_page();
 

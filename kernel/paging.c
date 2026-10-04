@@ -87,6 +87,13 @@ int map_page(
 
     if (!(page_directory[directory_index] & PAGE_PRESENT)) { //如果页表不存在
 
+        /**
+         * PMM 返回的“物理地址”可以直接当 C 指针访问。
+         * 这是一个隐患，因为现在申请的地址还在最开始的4MB内
+         * 所以可以直接当C指针访问，如果大于4MB以上的地址
+         * 那么就会直接Page Fault了。
+         * 这一个隐患，要改
+         */
         page_table = (unsigned int *)pmm_alloc_page();
 
         if (page_table == 0) {
