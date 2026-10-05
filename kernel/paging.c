@@ -119,6 +119,9 @@ int map_page(
     if (!(page_directory[directory_index] & PAGE_PRESENT)) { //如果页表不存在
 
     
+         /*
+         * 向 PMM 申请一页，用来当 Page Table。
+         */
         page_table = (unsigned int *)pmm_alloc_page();
 
         if (page_table == 0) {
@@ -127,12 +130,48 @@ int map_page(
 
         memset(page_table, 0, PAGE_SIZE);
 
-        page_directory[directory_index] =
+
+
+        /*
+         * PDE 的 flags。
+         */
+        unsigned int directory_flags =
+            PAGE_PRESENT |
+            PAGE_WRITE;
+        
+        /**
+         * 如果要映射的是用户页， 
+         * PDE 也必须设置 PAGE_USER。
+         */
+        if (flags & PAGE_USER) {
+            directory_flags |= PAGE_USER;
+        }    
+
+
+        page_directory[directory_index] = 
             ((unsigned int)page_table & PAGE_ADDR_MASK)
-            | PAGE_PRESENT
-            | PAGE_WRITE;
+            | directory_flags;
+
+
     } else {
-        page_table =(unsigned int *) (page_directory[directory_index] & PAGE_ADDR_MASK);
+
+        if (flags & PAGE_USER)
+        {
+            /**
+             * 非常关键：
+             * 
+             * 如果PTE是 user
+             * PDE也必须是 user
+             * 
+             */
+            page_directory[directory_index] |= PAGE_USER;
+        }
+
+        
+
+        page_table = 
+        (unsigned int *) 
+        (page_directory[directory_index] & PAGE_ADDR_MASK);
     }
 
     page_table[table_index] =

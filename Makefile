@@ -73,7 +73,11 @@ gdt_flush.o: kernel/gdt_flush.asm
 	$(NASM) -f elf32 kernel/gdt_flush.asm -o gdt_flush.o
 
 
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o gdt.o tss.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o linker.ld
+user_mode.o: kernel/user_mode.asm
+	$(NASM) -f elf32 kernel/user_mode.asm -o user_mode.o
+
+
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o gdt.o tss.o user_mode.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -91,7 +95,8 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keybo
 		paging.o \
 		gdt.o \
 		tss.o \
-		gdt_flush.o
+		gdt_flush.o \
+		user_mode.o
 
 kernel.raw: kernel.elf
 	$(OBJCOPY) -O binary kernel.elf kernel.raw
@@ -148,4 +153,5 @@ clean:
 		paging.o \
 		gdt.o \
 		tss.o \
-		gdt_flush.o
+		gdt_flush.o \ 
+		user_mode.o
