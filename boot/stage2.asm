@@ -13,6 +13,12 @@ E820_MAX_ENTRIES equ 128
 CODE_SEG equ 0x08
 DATA_SEG equ 0x10
 
+USER_CODE_SEG  equ 0x18
+USER_DATA_SEG  equ 0x20
+
+
+
+
 KERNEL_SEGMENT equ 0x1000
 %include "boot/kernel_sectors.inc"
 
@@ -201,6 +207,23 @@ gdt_data:
     db 10010010b
     db 11001111b
     db 0x00
+
+gdt_user_code:
+    dw 0xffff
+    dw 0x0000
+    db 0x00
+    db 11111010b
+    db 11001111b
+    db 0x00
+
+gdt_user_data:
+    dw 0xffff
+    dw 0x0000
+    db 0x00
+    db 11110010b
+    db 11001111b
+    db 0x00
+
 
 gdt_end:
 

@@ -5,9 +5,7 @@
 #define PAGE_SIZE    4096   //字节
 #define PAGE_ENTRIES 1024   //PDE,PTE的数量
 
-#define PAGE_PRESENT 0x1    //P  PDE或者PTE是否存在
-#define PAGE_WRITE   0x2    //RW 此页面允许写入
-#define PAGE_USER    0x004  //US 用户态也可以访问，不设置的话，只能内核态能访问
+
 
 // 表示保留高 20 位地址，把低 12 位 flags 清掉。
 // 转成二进制： 11111111111111111111000000000000
@@ -94,6 +92,19 @@ int map_page(
     unsigned int physical_address,
     unsigned int flags)
 {
+
+    //0xFFF对应二进制： 1111 1111 1111
+    //检查是否4KB对齐，因为只映射页，不能映射任意字节
+    //最低 12 位不为 0，就说明地址不是 4KB 对齐。
+    //所以要检查是否4KB对齐
+    if ((virtual_address & 0xFFF) != 0) {
+        return 0;
+    }
+
+    if ((physical_address & 0xFFF) != 0) {
+        return 0;
+    }
+
 
     //高10位，目录表的索引
     unsigned int directory_index =
