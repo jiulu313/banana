@@ -67,3 +67,13 @@ void tss_set_kernel_stack(unsigned int esp0)
 {
     tss.esp0 = esp0;
 }
+
+unsigned int tss_get_address(void)
+{
+    return (unsigned int)&tss;
+}
+
+unsigned int tss_get_size(void)
+{
+    return sizeof(tss);
+}

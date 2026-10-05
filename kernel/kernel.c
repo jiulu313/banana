@@ -6,12 +6,16 @@
 #include "memory.h"
 #include "pmm.h"
 #include "paging.h"
+#include "gdt.h"
 
 void kernel_main(void)
 {
     
     //清屏
     vga_clear();
+
+    //重新加载GDT
+    gdt_init();
 
     //初始化中断
     idt_init();

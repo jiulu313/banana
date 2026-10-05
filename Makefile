@@ -63,10 +63,17 @@ pmm.o: kernel/pmm.c kernel/pmm.h kernel/e820.h kernel/memory.h
 paging.o: kernel/paging.c kernel/paging.h kernel/memory.h
 	$(CC) $(CFLAGS) -c kernel/paging.c -o paging.o
 
+gdt.o: kernel/gdt.c kernel/gdt.h kernel/tss.h
+	$(CC) $(CFLAGS) -c kernel/gdt.c -o gdt.o
+
+tss.o: kernel/tss.c kernel/tss.h kernel/memory.h
+	$(CC) $(CFLAGS) -c kernel/tss.c -o tss.o
+
+gdt_flush.o: kernel/gdt_flush.asm
+	$(NASM) -f elf32 kernel/gdt_flush.asm -o gdt_flush.o
 
 
-
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o  shell.o memory.o e820.o pmm.o paging.o linker.ld
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o gdt.o tss.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -81,7 +88,10 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keybo
 		memory.o \
 		e820.o \
 		pmm.o \
-		paging.o
+		paging.o \
+		gdt.o \
+		tss.o \
+		gdt_flush.o
 
 kernel.raw: kernel.elf
 	$(OBJCOPY) -O binary kernel.elf kernel.raw
@@ -135,4 +145,7 @@ clean:
 		pmm.o \
 		kernel.raw \
 		boot/kernel_sectors.inc \
-		paging.o
+		paging.o \
+		gdt.o \
+		tss.o \
+		gdt_flush.o
