@@ -35,30 +35,38 @@ void kernel_main(void)
     shell_init();
 
 
+    volatile unsigned int *p =
+    (volatile unsigned int *)0x00500000;
+
+    *p = 0xABCDEF01;
+
+    vga_write_hex(*p);
+
+
     /**
      *  测试虚拟地址
      */
-    void *physical = pmm_alloc_page();
+    // void *physical = pmm_alloc_page();
 
-    vga_write("physical page: ");
-    vga_write_hex((unsigned int)physical);
-    vga_write("\n");
+    // vga_write("physical page: ");
+    // vga_write_hex((unsigned int)physical);
+    // vga_write("\n");
 
   
-    map_page(
-        0x00400000,
-        (unsigned int)physical,
-        0x2
-    );
+    // map_page(
+    //     0x00400000,
+    //     (unsigned int)physical,
+    //     0x2
+    // );
 
-    volatile unsigned int *p =
-        (volatile unsigned int *)0x00400000;
+    // volatile unsigned int *p =
+    //     (volatile unsigned int *)0x00400000;
 
-    *p = 0x12345678;
+    // *p = 0x12345678;
 
-    vga_write("value: ");
-    vga_write_hex(*p);
-    vga_write("\n");
+    // vga_write("value: ");
+    // vga_write_hex(*p);
+    // vga_write("\n");
 
 
     /**

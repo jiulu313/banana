@@ -13,10 +13,14 @@
 // 转成二进制： 11111111111111111111000000000000
 #define PAGE_ADDR_MASK 0xFFFFF000
 
+
+#define IDENTITY_MB     16  //16MB
+#define IDENTITY_TABLES (IDENTITY_MB / 4)
+
 static unsigned int page_directory[PAGE_ENTRIES]
     __attribute__((aligned(4096)));
 
-static unsigned int first_page_table[PAGE_ENTRIES]
+static unsigned int identity_page_tables[IDENTITY_TABLES][PAGE_ENTRIES]
     __attribute__((aligned(4096)));
 
 
@@ -24,20 +28,36 @@ void paging_init(void)
 {
     //初始化
     memset(page_directory, 0, sizeof(page_directory));
-    memset(first_page_table, 0, sizeof(first_page_table));
+    memset(identity_page_tables, 0, sizeof(identity_page_tables));
 
-    for (unsigned int i = 0; i < PAGE_ENTRIES; i++) {
+   //填充4张页表
+    for (unsigned int table = 0; table < IDENTITY_TABLES; table++)
+    {
+        
+        for (unsigned int entry = 0; entry < PAGE_ENTRIES; entry++)
+        {
+            unsigned int page_number = table * PAGE_ENTRIES + entry;
 
-        unsigned int physical_address =  i * PAGE_SIZE;
+            unsigned int physical_address = page_number * PAGE_SIZE;
 
-        first_page_table[i] = physical_address | PAGE_PRESENT | PAGE_WRITE;
+            identity_page_tables[table][entry] = 
+                physical_address | 
+                PAGE_PRESENT | 
+                PAGE_WRITE;
+        }
     }
+    
 
-    //把页表挂到页目录下
-    page_directory[0] =
-        ((unsigned int)first_page_table) |
-        PAGE_PRESENT |
-        PAGE_WRITE;
+    //把 4 张 Page Table 挂进 Page Directory
+    for (unsigned int i = 0; i < IDENTITY_TABLES; i++)
+    {
+        //第 i 张页表首地址
+        unsigned int addr = (unsigned int) &identity_page_tables[i][0];
+        addr = addr & PAGE_ADDR_MASK;
+        page_directory[i] = addr | PAGE_PRESENT | PAGE_WRITE;
+    }
+    
+
 
 
     //把当前页目录的物理地址，放在CR3中
@@ -87,13 +107,7 @@ int map_page(
 
     if (!(page_directory[directory_index] & PAGE_PRESENT)) { //如果页表不存在
 
-        /**
-         * PMM 返回的“物理地址”可以直接当 C 指针访问。
-         * 这是一个隐患，因为现在申请的地址还在最开始的4MB内
-         * 所以可以直接当C指针访问，如果大于4MB以上的地址
-         * 那么就会直接Page Fault了。
-         * 这一个隐患，要改
-         */
+    
         page_table = (unsigned int *)pmm_alloc_page();
 
         if (page_table == 0) {
