@@ -35,13 +35,36 @@ void kernel_main(void)
     shell_init();
 
 
-    volatile unsigned int *p =
-    (volatile unsigned int *)0x00500000;
+    /**
+     * 测试unmap_page后，再次访问此地址对应的内存
+     * 看下是否报Page Fault
+     * 结果：会报，符合预期
+     */
+    // void *physical = pmm_alloc_page();
 
-    *p = 0xABCDEF01;
+    // map_page(
+    //     0x02000000,
+    //     (unsigned int)physical,
+    //     0x02
+    // );
 
-    vga_write_hex(*p);
+    // volatile unsigned int *p =
+    //     (volatile unsigned int *)0x02000000;
 
+    // *p = 0x12345678;
+
+    // vga_write("before unmap: ");
+    // vga_write_hex(*p);
+    // vga_write("\n");
+
+    // unmap_page(0x02000000);
+
+    // vga_write("unmapped\n");
+
+    // // 故意再次访问
+    // unsigned int value = *p;
+
+    // vga_write_hex(value);
 
     /**
      *  测试虚拟地址

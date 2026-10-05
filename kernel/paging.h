@@ -9,4 +9,6 @@ int map_page(
     unsigned int flags
 );
 
+int unmap_page(unsigned int virtual_address);
+
 #endif

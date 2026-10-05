@@ -139,3 +139,42 @@ int map_page(
 
     return 1;
 }
+
+
+//主动撤销虚拟地址映射
+//只是撤销地址映射，并没有释放物理页
+int unmap_page(unsigned int virtual_address)
+{
+    unsigned int directory_index =
+        virtual_address >> 22;
+
+    unsigned int table_index =
+        (virtual_address >> 12) & 0x3FF;
+
+    // 对应的 Page Table 都不存在
+    if (!(page_directory[directory_index] & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    unsigned int *page_table =
+        (unsigned int *)
+        (page_directory[directory_index] & PAGE_ADDR_MASK);
+
+    // 这个虚拟页本身没有映射
+    if (!(page_table[table_index] & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    // 清掉整个 PTE
+    page_table[table_index] = 0;
+
+    // 清掉这个虚拟地址对应的 TLB 缓存
+    __asm__ volatile (
+        "invlpg (%0)"
+        :
+        : "r"(virtual_address)
+        : "memory"
+    );
+
+    return 1;
+}
