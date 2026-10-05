@@ -178,3 +178,43 @@ int unmap_page(unsigned int virtual_address)
 
     return 1;
 }
+
+
+//查询一个虚拟地址当前映射到了哪个物理地址
+//返回1：映射存在，则第二个参数把物理地址返回出来
+//返回0：映射不存在
+int get_mapping(
+    unsigned int virtual_address,
+    unsigned int *physical_address)
+{
+    unsigned int directory_index =
+        virtual_address >> 22;
+
+    unsigned int table_index =
+        (virtual_address >> 12) & 0x3FF;
+
+    unsigned int offset =
+        virtual_address & 0xFFF;
+
+    // PDE 不存在
+    if (!(page_directory[directory_index] & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    unsigned int *page_table =
+        (unsigned int *)
+        (page_directory[directory_index] & PAGE_ADDR_MASK);
+
+    // PTE 不存在
+    if (!(page_table[table_index] & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    unsigned int physical_page =
+        page_table[table_index] & PAGE_ADDR_MASK;
+
+    *physical_address =
+        physical_page + offset;
+
+    return 1;
+}
