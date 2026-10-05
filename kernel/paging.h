@@ -2,6 +2,11 @@
 #define PAGING_H
 
 
+#define PAGE_PRESENT 0x1    //P  PDE或者PTE是否存在
+#define PAGE_WRITE   0x2    //RW 此页面允许写入
+#define PAGE_USER    0x004  //US 用户态也可以访问，不设置的话，只能内核态能访问
+
+
 //初始化分页机制
 void paging_init(void);
 

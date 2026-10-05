@@ -36,6 +36,35 @@ void kernel_main(void)
 
 
     /**
+     * 测试高地址低地址映射同一块内存
+     */
+    void *physical = pmm_alloc_page();
+
+    map_page(
+        0xC0000000,
+        (unsigned int)physical,
+        PAGE_WRITE
+    );
+
+    volatile unsigned int *high =
+        (volatile unsigned int *)0xC0000000;
+
+    volatile unsigned int *low =
+        (volatile unsigned int *)physical;
+
+    *high = 0xCAFEBABE;
+
+    vga_write("high: ");
+    vga_write_hex(*high);
+    vga_write("\n");
+
+    vga_write("low : ");
+    vga_write_hex(*low);
+    vga_write("\n");
+
+
+
+    /**
      * 测试unmap_page后，再次访问此地址对应的内存
      * 看下是否报Page Fault
      * 结果：会报，符合预期
