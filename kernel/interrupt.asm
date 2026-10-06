@@ -11,7 +11,7 @@ global irq1
 extern keyboard_handler
 
 extern exception_handler
-extern interrupt_handler
+extern syscall_handler
 
 
 idt_load:
@@ -112,7 +112,12 @@ global isr80
 
 isr80:
     pusha
-    call interrupt_handler
+    mov eax,esp 
+    push eax 
+
+    call syscall_handler
+    add esp, 4
+
     popa
     iret
 
