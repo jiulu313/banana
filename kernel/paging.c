@@ -268,3 +268,45 @@ int get_mapping(
 
     return 1;
 }
+
+//检查一个用户空间地址是否被映射
+int is_user_address_mapped(unsigned int virtual_address)
+{
+    unsigned int directory_index =
+        virtual_address >> 22;
+
+    unsigned int table_index =
+        (virtual_address >> 12) & 0x3FF;
+
+    unsigned int pde =
+        page_directory[directory_index];
+
+    //PDE不存在    
+    if (!(pde & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    //PDE.USER=1 ?
+    if (!(pde & PAGE_USER)) {
+        return 0;
+    }
+
+
+    unsigned int *page_table =
+        (unsigned int *)(pde & PAGE_ADDR_MASK);
+
+    unsigned int pte =
+        page_table[table_index];
+
+    //PTE不存在
+    if (!(pte & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    //PTE.USER=1?
+    if (!(pte & PAGE_USER)) {
+        return 0;
+    }
+
+    return 1;
+}
