@@ -63,3 +63,34 @@ int copy_string_from_user(
 
     return 0;
 }
+
+
+int copy_to_user(
+    void *user_dest,
+    const void *kernel_src,
+    unsigned int size)
+{
+    unsigned char *dest =
+        (unsigned char *)user_dest;
+
+    const unsigned char *src =
+        (const unsigned char *)kernel_src;
+
+    for (unsigned int i = 0;
+         i < size;
+         i++)
+    {
+        unsigned int user_address =
+            (unsigned int)&dest[i];
+
+        if (!is_user_address_writable(
+                user_address))
+        {
+            return 0;
+        }
+
+        dest[i] = src[i];
+    }
+
+    return 1;
+}

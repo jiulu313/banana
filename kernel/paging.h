@@ -36,4 +36,9 @@ int get_mapping(
 //检查一个用户空间地址是否被映射
 int is_user_address_mapped(unsigned int virtual_address);
 
+//检查用户页面是否可写
+int is_user_address_writable(
+    unsigned int virtual_address
+);
+
 #endif

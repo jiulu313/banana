@@ -2,8 +2,11 @@
 #include "vga.h"
 #include "paging.h"
 #include "usercopy.h"
+#include "timer.h"
+
 
 #define SYS_WRITE 1
+#define SYS_GET_TICKS 2
 
 #define SYSCALL_STRING_MAX 256
 
@@ -43,7 +46,8 @@ void syscall_handler(struct syscall_frame *frame)
     unsigned int syscall_number = frame->eax;
 
     switch (syscall_number) {
-        case SYS_WRITE:{
+        case SYS_WRITE:
+        {
             const char *user_str = (const char *)frame->ebx;
 
             //syscall_handler这个函数是在内核中运行
@@ -75,6 +79,24 @@ void syscall_handler(struct syscall_frame *frame)
 
             break;
         } 
+        // EAX = 2
+        // EBX = 用户缓冲区地址
+        case SYS_GET_TICKS:
+        {
+            unsigned int *user_result = (unsigned int *)frame->ebx;
+
+            unsigned int ticks = timer_get_ticks();
+
+            if (!copy_to_user(user_result,&ticks,sizeof(ticks)))
+            {
+                frame->eax = 0xFFFFFFFF;
+                break;
+            }
+
+            frame->eax = 0;
+
+            break;
+        }
         default: {
             /*
              * 这里暂时用 0xFFFFFFFF 表示 syscall 不存在

@@ -310,3 +310,50 @@ int is_user_address_mapped(unsigned int virtual_address)
 
     return 1;
 }
+
+//检查用户页是否可写
+int is_user_address_writable(
+    unsigned int virtual_address)
+{
+    unsigned int directory_index =
+        virtual_address >> 22;
+
+    unsigned int table_index =
+        (virtual_address >> 12) & 0x3FF;
+
+    unsigned int pde =
+        page_directory[directory_index];
+
+    if (!(pde & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    if (!(pde & PAGE_USER)) {
+        return 0;
+    }
+
+    if (!(pde & PAGE_WRITE)) {
+        return 0;
+    }
+
+    unsigned int *page_table =
+        (unsigned int *)
+        (pde & PAGE_ADDR_MASK);
+
+    unsigned int pte =
+        page_table[table_index];
+
+    if (!(pte & PAGE_PRESENT)) {
+        return 0;
+    }
+
+    if (!(pte & PAGE_USER)) {
+        return 0;
+    }
+
+    if (!(pte & PAGE_WRITE)) {
+        return 0;
+    }
+
+    return 1;
+}
