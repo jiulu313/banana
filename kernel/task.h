@@ -9,7 +9,7 @@ struct task
     unsigned int id;
 
     unsigned int esp;
-    unsigned int ebp;
+    // unsigned int ebp;
 
     unsigned int state;
 };

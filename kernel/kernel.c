@@ -7,6 +7,7 @@
 #include "pmm.h"
 #include "paging.h"
 #include "gdt.h"
+#include "scheduler.h"
 
 
 #define USER_CODE_VA    0x40000000
@@ -323,11 +324,15 @@ void kernel_main(void)
      * 所以正常情况下，
      * 这个函数不会像普通 C 函数一样 return。
      */
-    enter_user_mode(
-        USER_CODE_VA,
-        USER_STACK_TOP
-    );
+    // enter_user_mode(
+    //     USER_CODE_VA,
+    //     USER_STACK_TOP
+    // );
 
+
+    scheduler_init();
+
+    __asm__ volatile ("sti");
 
     /*
      * 正常情况下永远执行不到这里。

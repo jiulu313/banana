@@ -5,6 +5,7 @@ global idt_load
 ;timer中断处理
 global irq0
 extern timer_handler
+extern scheduler_on_tick
 
 ;键盘中断处理
 global irq1
@@ -125,6 +126,18 @@ isr80:
 irq0:
     pusha
     call timer_handler
+
+    mov eax, esp ;当前esp指向刚刚pusha保存的现场 
+
+    
+    ;scheduler_on_tick(current_esp)
+    push eax
+    call scheduler_on_tick
+    add esp,4
+
+    ;切换
+    mov esp,eax
+
     popa
     iret     
 
