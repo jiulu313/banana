@@ -79,9 +79,10 @@ user_mode.o: kernel/user_mode.asm
 syscall.o: kernel/syscall.c kernel/syscall.h kernel/vga.h
 	$(CC) $(CFLAGS) -c kernel/syscall.c -o syscall.o
 
+usercopy.o: kernel/usercopy.c kernel/usercopy.h kernel/paging.h
+	$(CC) $(CFLAGS) -c kernel/usercopy.c -o usercopy.o
 
-
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keyboard.o gdt.o tss.o user_mode.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o  syscall.o linker.ld
+kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o usercopy.o pic.o timer.o keyboard.o gdt.o tss.o user_mode.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o  syscall.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -101,7 +102,8 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o  pic.o timer.o keybo
 		tss.o \
 		gdt_flush.o \
 		user_mode.o \
-		syscall.o
+		syscall.o \
+		usercopy.o
 
 kernel.raw: kernel.elf
 	$(OBJCOPY) -O binary kernel.elf kernel.raw
@@ -160,4 +162,5 @@ clean:
 		tss.o \
 		gdt_flush.o \
 		user_mode.o \
-		syscall.o
+		syscall.o \
+		usercopy.o

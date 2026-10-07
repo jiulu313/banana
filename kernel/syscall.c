@@ -1,10 +1,11 @@
 #include "syscall.h"
 #include "vga.h"
 #include "paging.h"
+#include "usercopy.h"
 
 #define SYS_WRITE 1
 
-
+#define SYSCALL_STRING_MAX 256
 
 static unsigned int str_length(const char *str) {
 
@@ -40,31 +41,37 @@ static int user_string_valid(const char *str)
 void syscall_handler(struct syscall_frame *frame)
 {
     unsigned int syscall_number = frame->eax;
+
     switch (syscall_number) {
         case SYS_WRITE:{
-            const char *str = (const char *)frame->ebx;
+            const char *user_str = (const char *)frame->ebx;
 
-            //检查字符串是否超过4096个字节
-            if (user_string_valid(str)) {
+            //syscall_handler这个函数是在内核中运行
+            //所以直接定义的kernel_buffer数组，就是内核中的数组
+            char kernel_buffer[SYSCALL_STRING_MAX];
+
+            if (!copy_string_from_user(
+                    kernel_buffer,
+                    user_str,
+                    sizeof(kernel_buffer)))
+            {
                 frame->eax = 0xFFFFFFFF;
                 break;
             }
-            
 
-            //如果地址没有映射
-            if (!is_user_address_mapped((unsigned int)str)) {
-                frame->eax = 0xFFFFFFFF;
-                break;   
+            //vga_write函数，接收到的地址
+            //不再是用户空间的地址了
+            //而是内核空间的地址
+            //更安全，更清晰
+            vga_write(kernel_buffer);
+
+            unsigned int length = 0;
+
+            while (kernel_buffer[length] != '\0') {
+                length++;
             }
             
-
-            vga_write(str);
-
-
-            /** 
-             * 返回值放进 saved EAX
-             */
-            frame->eax = str_length(str);
+            frame->eax = length;
 
             break;
         } 
