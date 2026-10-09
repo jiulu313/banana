@@ -80,6 +80,7 @@ void vga_putc(char c)
             vga[index] = ' ';
             vga[index + 1] = VGA_COLOR;
         }
+        return;
     }
     
 
