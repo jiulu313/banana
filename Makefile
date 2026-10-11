@@ -87,7 +87,11 @@ scheduler.o: kernel/scheduler.c kernel/scheduler.h kernel/task.h kernel/vga.h
 	$(CC) $(CFLAGS) -c kernel/scheduler.c -o scheduler.o
 	
 
-kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o usercopy.o scheduler.o pic.o timer.o keyboard.o gdt.o tss.o user_mode.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o  syscall.o linker.ld
+task.o: kernel/task.c kernel/task.h
+	$(CC) $(CFLAGS) -c kernel/task.c -o task.o
+
+
+kernel.elf: task.o kernel_entry.o kernel.o vga.o idt.o interrupt.o usercopy.o scheduler.o pic.o timer.o keyboard.o gdt.o tss.o user_mode.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o  syscall.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -109,7 +113,8 @@ kernel.elf: kernel_entry.o kernel.o vga.o idt.o interrupt.o usercopy.o scheduler
 		user_mode.o \
 		syscall.o \
 		usercopy.o \
-		scheduler.o
+		scheduler.o \
+		task.o
 
 kernel.raw: kernel.elf
 	$(OBJCOPY) -O binary kernel.elf kernel.raw
@@ -170,4 +175,5 @@ clean:
 		user_mode.o \
 		syscall.o \
 		usercopy.o \
-		scheduler.o
+		scheduler.o \
+		task.o

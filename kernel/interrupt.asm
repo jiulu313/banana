@@ -133,7 +133,7 @@ irq0:
     ;scheduler_on_tick(current_esp)
     push eax
     call scheduler_on_tick
-    add esp,4
+    add esp,4                             
 
     ;切换
     mov esp,eax

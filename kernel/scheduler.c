@@ -97,23 +97,20 @@ static unsigned int prepare_task_stack(
 
 void scheduler_init(void)
 {
-    tasks[0].id = 0;
-    tasks[0].state = TASK_READY;
 
-    tasks[0].esp =
-        prepare_task_stack(
-            task_stack_a,
-            task_a
-        );
+    task_create(
+        &tasks[0],
+        0,
+        task_stack_a,
+        task_a
+    );
 
-    tasks[1].id = 1;
-    tasks[1].state = TASK_READY;
-
-    tasks[1].esp =
-        prepare_task_stack(
-            task_stack_b,
-            task_b
-        );
+    task_create(
+        &tasks[1],
+        1,
+        task_stack_b,
+        task_b
+    );
 
     /*
      * 当前还没有正式 task 在运行。
@@ -122,9 +119,8 @@ void scheduler_init(void)
 }
 
 
-unsigned int scheduler_on_tick(
-    unsigned int current_esp)
-{
+unsigned int scheduler_on_tick(unsigned int current_esp)
+{ 
     /*
      * 第一次时钟中断发生时，
      * 当前运行的是 kernel_main，
