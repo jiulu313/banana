@@ -1,7 +1,7 @@
 #include "scheduler.h"
 #include "task.h"
 
-// 容量上限不等于当前实际任务数。
+// 包含 0 号 idle，最多再添加 7 个普通任务。
 #define TASK_MAX 8
 
 // 每个任务连续运行 5 个时钟 tick，再轮到下一个任务。
@@ -18,7 +18,25 @@ static int current_task = -1;
 static int task_count = 0;
 static unsigned int slice_ticks = 0; // 当前这一轮时间片已使用的 tick 数。
 
+static void idle_task(void)
+{
+    // 初始现场的 EFLAGS 已设置 IF=1，时钟/键盘中断可以唤醒 CPU。
+    while (1) {
+        __asm__ volatile ("hlt");
+    }
+}
 
+static int scheduler_pick_next(void)
+{
+    // 从当前任务之后开始找一圈，优先选择就绪的普通任务。
+    for (int offset = 1; offset <= task_count; offset++) {
+        int next = (current_task + offset) % task_count;
+        if (next != 0 && tasks[next].state == TASK_READY) {
+            return next;
+        }
+    }
+    return 0; // 没有普通任务就绪时，才运行 idle。
+}
 
 // 仅在启动阶段、关中断时添加任务；成功返回 1，失败返回 0。
 int scheduler_add_task(void (*entry)(void))
@@ -39,6 +57,7 @@ void scheduler_init(void)
     current_task = -1;
     slice_ticks = 0;
 
+    scheduler_add_task(idle_task); // 固定占用 0 号槽位和独立栈。
 }
 
 int scheduler_yield(void)
@@ -69,19 +88,19 @@ unsigned int scheduler_on_tick(unsigned int current_esp)
      */
     if (current_task == -1) {
 
-        current_task = 0;
+        current_task = scheduler_pick_next();
 
-        tasks[0].state = TASK_RUNNING;
+        tasks[current_task].state = TASK_RUNNING;
 
         /*
          * 不保存 current_esp！
          *
          * 因为这个 ESP 属于 kernel_main，
-         * 不是 task_a。
+         * 不属于选中的任务。
          *
-         * 直接返回 task_a 预先准备好的 ESP。
+         * 直接返回选中任务预先准备好的 ESP。
          */
-        return tasks[0].esp;
+        return tasks[current_task].esp;
     }
 
     /*
@@ -91,7 +110,7 @@ unsigned int scheduler_on_tick(unsigned int current_esp)
     tasks[current_task].esp = current_esp;
 
     slice_ticks++;
-    if (slice_ticks < TASK_TIME_SLICE) {
+    if (current_task != 0 && slice_ticks < TASK_TIME_SLICE) {
         // 时间片还没用完：返回同一份现场，继续运行当前任务。
         return current_esp;
     }
@@ -113,11 +132,7 @@ unsigned int scheduler_on_yield(unsigned int current_esp)
     /*
      * 选择下一个任务
      */
-    current_task++;
-
-    if (current_task >= task_count) {
-        current_task = 0;
-    }
+    current_task = scheduler_pick_next();
 
     tasks[current_task].state = TASK_RUNNING;
 

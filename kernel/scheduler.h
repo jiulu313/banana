@@ -1,7 +1,7 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-// 启动时、关中断状态下初始化一次；初始化后再添加任务。
+// 启动时、关中断状态下初始化一次，创建 0 号 idle；之后最多添加 7 个普通任务。
 void scheduler_init(void);
 
 /* 仅限启动阶段、开启中断前调用；成功返回 1，空入口或容量满返回 0。
