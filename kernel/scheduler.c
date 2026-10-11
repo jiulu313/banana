@@ -5,6 +5,9 @@
 // 容量上限不等于当前实际任务数。
 #define TASK_MAX 8
 
+// 每个任务连续运行 5 个时钟 tick，再轮到下一个任务。
+#define TASK_TIME_SLICE 5
+
 static struct task tasks[TASK_MAX];
 
 // 每个任务槽位对应一块独立的栈，启动时直接使用，不需要动态申请。
@@ -14,6 +17,7 @@ static unsigned char task_stacks[TASK_MAX][TASK_STACK_SIZE]
 
 static int current_task = -1;
 static int task_count = 0;
+static unsigned int slice_ticks = 0; // 当前这一轮时间片已使用的 tick 数。
 
 
 
@@ -59,6 +63,7 @@ void scheduler_init(void)
 {
     task_count = 0;
     current_task = -1;
+    slice_ticks = 0;
 
     scheduler_add_task(task_a);
     scheduler_add_task(task_b);
@@ -100,6 +105,13 @@ unsigned int scheduler_on_tick(unsigned int current_esp)
      */
     tasks[current_task].esp = current_esp;
 
+    slice_ticks++;
+    if (slice_ticks < TASK_TIME_SLICE) {
+        // 时间片还没用完：返回同一份现场，继续运行当前任务。
+        return current_esp;
+    }
+
+    slice_ticks = 0; // 下一任务从一个完整的新时间片开始。
     tasks[current_task].state = TASK_READY;
 
     /*
