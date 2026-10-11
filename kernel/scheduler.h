@@ -9,6 +9,14 @@ void scheduler_init(void);
  */
 int scheduler_add_task(void (*entry)(void));
 
+/* 普通内核任务中、开中断时调用；恢复运行后返回 0。
+ * 启动线程或关中断/IRQ 上下文调用返回 -1。
+ */
+int scheduler_yield(void);
+
+// 软件中断入口使用，参数和返回值都是 pusha 现场的地址。
+unsigned int scheduler_on_yield(unsigned int current_esp);
+
 /*
  * 参数：
  * current_esp = 当前任务中断现场的栈顶

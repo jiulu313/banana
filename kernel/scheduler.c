@@ -41,6 +41,19 @@ void scheduler_init(void)
 
 }
 
+int scheduler_yield(void)
+{
+    unsigned int flags;
+    __asm__ volatile ("pushfl; popl %0" : "=r"(flags) : : "memory");
+    if (current_task == -1 || !(flags & 0x200)) {
+        return -1;
+    }
+
+    // CPU 自动保存 EIP/CS/EFLAGS，入口再 pusha，形成与 IRQ0 相同的现场。
+    __asm__ volatile ("int $0x81" : : : "memory");
+    return 0; // 只有这个任务再次被选中并恢复后，才执行到这里。
+}
+
 
 unsigned int scheduler_on_tick(unsigned int current_esp)
 {
@@ -83,6 +96,17 @@ unsigned int scheduler_on_tick(unsigned int current_esp)
         return current_esp;
     }
 
+    return scheduler_on_yield(current_esp);
+}
+
+// 时间片耗尽和主动让出共用这段轮转逻辑；这里不增加系统 tick。
+unsigned int scheduler_on_yield(unsigned int current_esp)
+{
+    if (task_count == 0 || current_task == -1) {
+        return current_esp;
+    }
+
+    tasks[current_task].esp = current_esp;
     slice_ticks = 0; // 下一任务从一个完整的新时间片开始。
     tasks[current_task].state = TASK_READY;
 

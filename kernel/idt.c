@@ -76,6 +76,7 @@ extern void isr30(void);
 extern void isr31(void);
 
 extern void isr80(void);
+extern void isr81(void);
 
 
 
@@ -206,6 +207,8 @@ void idt_init(void)
     idt_set_gate(31, (unsigned int)isr31, 0x08, attr);
 
     idt_set_gate(0x80, (unsigned int)isr80, 0x08, attr);
+    // 0x81 仅允许内核调用；中断门进入时自动关闭中断，保护切换过程。
+    idt_set_gate(0x81, (unsigned int)isr81, 0x08, 0x8E);
 
     idt_set_gate(32,(unsigned int)irq0,0x08,attr);
     idt_set_gate(33,(unsigned int)irq1,0x08,attr);

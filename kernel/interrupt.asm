@@ -6,6 +6,8 @@ global idt_load
 global irq0
 extern timer_handler
 extern scheduler_on_tick
+extern scheduler_on_yield
+global isr81
 
 ;键盘中断处理
 global irq1
@@ -142,8 +144,21 @@ irq0:
     iret     
 
 
+; 主动让出 CPU：不是硬件 IRQ，不调用 timer_handler，也不发送 PIC EOI。
+isr81:
+    pusha
+    cld
+    mov eax, esp             ; 保留现场地址，作为 C 函数参数
+    and esp, -16            ; C 函数调用前对齐栈
+    sub esp, 12
+    push eax
+    call scheduler_on_yield
+    mov esp, eax             ; 返回值是选中任务的现场地址
+    popa
+    iret
+
 irq1:
     pusha
     call keyboard_handler
     popa
-    iret     
+    iret
