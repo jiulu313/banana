@@ -2,18 +2,19 @@
 #include "task.h"
 #include "vga.h"
 
-#define TASK_COUNT 2
-#define STACK_SIZE 4096
+// 容量上限不等于当前实际任务数。
+#define TASK_MAX 8
 
-static struct task tasks[TASK_COUNT];
+static struct task tasks[TASK_MAX];
 
-static unsigned char task_stack_a[STACK_SIZE]
+static unsigned char task_stack_a[TASK_STACK_SIZE]
     __attribute__((aligned(16)));
 
-static unsigned char task_stack_b[STACK_SIZE]
+static unsigned char task_stack_b[TASK_STACK_SIZE]
     __attribute__((aligned(16)));
 
 static int current_task = -1;
+static int task_count = 0;
 
 
 
@@ -42,71 +43,35 @@ static void task_b(void)
 }
 
 
-// 给“新任务”提前伪造一份 CPU 中断现场，
-// 让调度器第一次切到这个任务时，
-// popa + iret 能像“恢复旧任务”一样把它启动起来。
-static unsigned int prepare_task_stack(
-    unsigned char *stack,
-    void (*entry)(void))
+// 仅在启动阶段、关中断时添加任务；成功返回 1，失败返回 0。
+static int scheduler_add_task(unsigned char *stack, void (*entry)(void))
 {
-    unsigned int *sp =
-        (unsigned int *)(stack + STACK_SIZE);
+    if (task_count >= TASK_MAX || stack == 0 || entry == 0) {
+        return 0;
+    }
 
-    /*
-     * iret 将来需要：
-     *
-     * EIP
-     * CS
-     * EFLAGS
-     *
-     * 栈向低地址增长，
-     * 所以反着 push。
-     */
-
-     
-    *--sp = 0x202;              // EFLAGS
-    *--sp = 0x08;               // CS
-    *--sp = (unsigned int)entry; // EIP
-
-    /*
-     * popa 将来需要的布局：
-     *
-     * EDI
-     * ESI
-     * EBP
-     * old ESP (popa 会跳过)
-     * EBX
-     * EDX
-     * ECX
-     * EAX
-     *
-     * 同样反方向构造。
-     */
-
-    *--sp = 0;   // EAX
-    *--sp = 0;   // ECX
-    *--sp = 0;   // EDX
-    *--sp = 0;   // EBX
-    *--sp = 0;   // ESP dummy
-    *--sp = 0;   // EBP
-    *--sp = 0;   // ESI
-    *--sp = 0;   // EDI
-
-    return (unsigned int)sp;
+    task_create(&tasks[task_count], task_count, stack, entry);
+    task_count++; // 准备完成后，这个任务才计入调度范围。
+    return 1;
 }
 
 void scheduler_init(void)
 {
-    task_create(&tasks[0], 0,task_stack_a,task_a);
-
-    task_create(&tasks[1],1,task_stack_b,task_b);
-
+    task_count = 0;
     current_task = -1;
+
+    scheduler_add_task(task_stack_a, task_a);
+    scheduler_add_task(task_stack_b, task_b);
 }
 
 
 unsigned int scheduler_on_tick(unsigned int current_esp)
-{ 
+{
+    // 没有任务时，返回原现场，继续执行被中断的代码。
+    if (task_count == 0) {
+        return current_esp;
+    }
+
     /*
      * 第一次时钟中断发生时，
      * 当前运行的是 kernel_main，
@@ -142,7 +107,7 @@ unsigned int scheduler_on_tick(unsigned int current_esp)
      */
     current_task++;
 
-    if (current_task >= TASK_COUNT) {
+    if (current_task >= task_count) {
         current_task = 0;
     }
 
