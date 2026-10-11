@@ -7,10 +7,9 @@
 
 static struct task tasks[TASK_MAX];
 
-static unsigned char task_stack_a[TASK_STACK_SIZE]
-    __attribute__((aligned(16)));
-
-static unsigned char task_stack_b[TASK_STACK_SIZE]
+// 每个任务槽位对应一块独立的栈，启动时直接使用，不需要动态申请。
+// TASK_STACK_SIZE 为 4096，因此每一行也保持 16 字节对齐。
+static unsigned char task_stacks[TASK_MAX][TASK_STACK_SIZE]
     __attribute__((aligned(16)));
 
 static int current_task = -1;
@@ -44,13 +43,14 @@ static void task_b(void)
 
 
 // 仅在启动阶段、关中断时添加任务；成功返回 1，失败返回 0。
-static int scheduler_add_task(unsigned char *stack, void (*entry)(void))
+static int scheduler_add_task(void (*entry)(void))
 {
-    if (task_count >= TASK_MAX || stack == 0 || entry == 0) {
+    if (task_count >= TASK_MAX || entry == 0) {
         return 0;
     }
 
-    task_create(&tasks[task_count], task_count, stack, entry);
+    task_create(&tasks[task_count], task_count,
+                task_stacks[task_count], entry);
     task_count++; // 准备完成后，这个任务才计入调度范围。
     return 1;
 }
@@ -60,8 +60,8 @@ void scheduler_init(void)
     task_count = 0;
     current_task = -1;
 
-    scheduler_add_task(task_stack_a, task_a);
-    scheduler_add_task(task_stack_b, task_b);
+    scheduler_add_task(task_a);
+    scheduler_add_task(task_b);
 }
 
 
