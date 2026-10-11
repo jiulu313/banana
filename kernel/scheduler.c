@@ -97,24 +97,10 @@ static unsigned int prepare_task_stack(
 
 void scheduler_init(void)
 {
+    task_create(&tasks[0], 0,task_stack_a,task_a);
 
-    task_create(
-        &tasks[0],
-        0,
-        task_stack_a,
-        task_a
-    );
+    task_create(&tasks[1],1,task_stack_b,task_b);
 
-    task_create(
-        &tasks[1],
-        1,
-        task_stack_b,
-        task_b
-    );
-
-    /*
-     * 当前还没有正式 task 在运行。
-     */
     current_task = -1;
 }
 
