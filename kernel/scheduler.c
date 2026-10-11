@@ -1,6 +1,5 @@
 #include "scheduler.h"
 #include "task.h"
-#include "vga.h"
 
 // 容量上限不等于当前实际任务数。
 #define TASK_MAX 8
@@ -21,33 +20,8 @@ static unsigned int slice_ticks = 0; // 当前这一轮时间片已使用的 tic
 
 
 
-static void task_a(void)
-{
-    while (1) {
-        vga_putc('A');
-
-        for (volatile unsigned int i = 0;
-             i < 1000000;
-             i++) {
-        }
-    }
-}
-
-static void task_b(void)
-{
-    while (1) {
-        vga_putc('B');
-
-        for (volatile unsigned int i = 0;
-             i < 1000000;
-             i++) {
-        }
-    }
-}
-
-
 // 仅在启动阶段、关中断时添加任务；成功返回 1，失败返回 0。
-static int scheduler_add_task(void (*entry)(void))
+int scheduler_add_task(void (*entry)(void))
 {
     if (task_count >= TASK_MAX || entry == 0) {
         return 0;
@@ -65,8 +39,6 @@ void scheduler_init(void)
     current_task = -1;
     slice_ticks = 0;
 
-    scheduler_add_task(task_a);
-    scheduler_add_task(task_b);
 }
 
 

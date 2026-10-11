@@ -21,6 +21,32 @@ extern void enter_user_mode(
 );
 
 
+// 演示任务由内核启动代码定义，调度器不关心任务具体做什么。
+static void task_a(void)
+{
+    while (1) {
+        vga_putc('A');
+
+        for (volatile unsigned int i = 0;
+             i < 1000000;
+             i++) {
+        }
+    }
+}
+
+static void task_b(void)
+{
+    while (1) {
+        vga_putc('B');
+
+        for (volatile unsigned int i = 0;
+             i < 1000000;
+             i++) {
+        }
+    }
+}
+
+
 void kernel_main(void)
 {
     /* -----------------------------
@@ -331,6 +357,14 @@ void kernel_main(void)
 
 
     scheduler_init();
+
+    // 先完成任务创建，再开启中断启动调度。
+    if (!scheduler_add_task(task_a) || !scheduler_add_task(task_b)) {
+        vga_write("task creation failed\n");
+        while (1) {
+            __asm__ volatile ("cli; hlt");
+        }
+    }
 
     __asm__ volatile ("sti");
 
