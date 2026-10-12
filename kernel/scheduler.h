@@ -14,6 +14,11 @@ int scheduler_add_task(void (*entry)(void));
  */
 int scheduler_yield(void);
 
+/* 普通内核任务、开中断时调用；idle/启动线程/关中断时返回 -1。
+ * ticks 为 0 时等同主动让出；休眠到期并恢复运行后返回 0。
+ */
+int scheduler_sleep(unsigned int ticks);
+
 // 软件中断入口使用，参数和返回值都是 pusha 现场的地址。
 unsigned int scheduler_on_yield(unsigned int current_esp);
 

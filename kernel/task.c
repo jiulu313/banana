@@ -63,4 +63,5 @@ void task_create(
     task->id = id;
     task->esp = prepare_task_stack(stack, entry);
     task->state = TASK_READY;
+    task->sleep_ticks = 0;
 }

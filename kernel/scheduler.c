@@ -74,11 +74,43 @@ int scheduler_yield(void)
 }
 
 
+int scheduler_sleep(unsigned int ticks)
+{
+    unsigned int flags;
+    // 修改休眠状态和切换必须连续完成，不能在中间被时钟中断打断。
+    __asm__ volatile ("pushfl; popl %0; cli" : "=r"(flags) : : "memory");
+    if (current_task <= 0 || !(flags & 0x200)) {
+        __asm__ volatile ("pushl %0; popfl" : : "r"(flags) : "memory", "cc");
+        return -1;
+    }
+
+    if (ticks != 0) {
+        tasks[current_task].sleep_ticks = ticks;
+        tasks[current_task].state = TASK_SLEEPING;
+    }
+
+    // 不能调用 scheduler_yield()，因为它会拒绝当前关中断的状态。
+    __asm__ volatile ("int $0x81" : : : "memory");
+    // 此任务恢复时 IF 仍为 0；恢复调用前的标志，重新允许硬件中断。
+    __asm__ volatile ("pushl %0; popfl" : : "r"(flags) : "memory", "cc");
+    return 0;
+}
+
 unsigned int scheduler_on_tick(unsigned int current_esp)
 {
     // 没有任务时，返回原现场，继续执行被中断的代码。
     if (task_count == 0) {
         return current_esp;
+    }
+
+    // 每次真实时钟中断推进休眠倒计时；主动让出不消耗休眠时间。
+    for (int i = 1; i < task_count; i++) {
+        if (tasks[i].state == TASK_SLEEPING && tasks[i].sleep_ticks > 0) {
+            tasks[i].sleep_ticks--;
+            if (tasks[i].sleep_ticks == 0) {
+                tasks[i].state = TASK_READY;
+            }
+        }
     }
 
     /*
@@ -127,7 +159,10 @@ unsigned int scheduler_on_yield(unsigned int current_esp)
 
     tasks[current_task].esp = current_esp;
     slice_ticks = 0; // 下一任务从一个完整的新时间片开始。
-    tasks[current_task].state = TASK_READY;
+    // 休眠任务要继续保持 SLEEPING，不能在切出时立即变回 READY。
+    if (tasks[current_task].state == TASK_RUNNING) {
+        tasks[current_task].state = TASK_READY;
+    }
 
     /*
      * 选择下一个任务

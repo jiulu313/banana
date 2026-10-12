@@ -6,6 +6,7 @@
 
 #define TASK_READY   0
 #define TASK_RUNNING 1
+#define TASK_SLEEPING 2
 
 struct task
 {
@@ -15,6 +16,7 @@ struct task
     // unsigned int ebp;
 
     unsigned int state;
+    unsigned int sleep_ticks; // 距离恢复就绪还剩多少个时钟 tick。
 };
 
 /* 启动阶段关中断时调用；task、stack、entry 必须有效。

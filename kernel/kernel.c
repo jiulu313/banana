@@ -26,12 +26,7 @@ static void task_a(void)
 {
     while (1) {
         vga_putc('A');
-        scheduler_yield(); // 打印后主动让出；恢复时从这一句之后继续。
-
-        for (volatile unsigned int i = 0;
-             i < 1000000;
-             i++) {
-        }
+        scheduler_sleep(100); // PIT 为 100 Hz，约一秒后再次打印。
     }
 }
 
@@ -39,12 +34,7 @@ static void task_b(void)
 {
     while (1) {
         vga_putc('B');
-        scheduler_yield();
-
-        for (volatile unsigned int i = 0;
-             i < 1000000;
-             i++) {
-        }
+        scheduler_sleep(200); // 约两秒后再次打印。
     }
 }
 
