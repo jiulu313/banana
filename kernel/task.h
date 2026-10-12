@@ -7,6 +7,7 @@
 #define TASK_READY   0
 #define TASK_RUNNING 1
 #define TASK_SLEEPING 2
+#define TASK_EXITED   3
 
 struct task
 {
@@ -21,7 +22,7 @@ struct task
 
 /* 启动阶段关中断时调用；task、stack、entry 必须有效。
  * stack 指向独立的 TASK_STACK_SIZE 字节栈，生命周期覆盖任务运行期。
- * 本步骤的任务入口必须像 task_a/task_b 一样持续运行，不能 return。
+ * 任务入口必须持续运行或调用 scheduler_exit()，不能直接 return。
  */
 void task_create(
     struct task *task,

@@ -96,6 +96,24 @@ int scheduler_sleep(unsigned int ticks)
     return 0;
 }
 
+void scheduler_exit(void)
+{
+    unsigned int flags;
+    // 和休眠一样，标记状态与切出之间不能被时钟中断打断。
+    __asm__ volatile ("pushfl; popl %0; cli" : "=r"(flags) : : "memory");
+    if (current_task > 0 && (flags & 0x200)) {
+        tasks[current_task].sleep_ticks = 0;
+        tasks[current_task].state = TASK_EXITED;
+        __asm__ volatile ("int $0x81" : : : "memory");
+        // 正常情况下不会回来：调度器只选择 READY 任务。
+    }
+
+    // 无法合法退出或意外恢复了已退出任务时，停机而不是继续执行。
+    while (1) {
+        __asm__ volatile ("cli; hlt");
+    }
+}
+
 unsigned int scheduler_on_tick(unsigned int current_esp)
 {
     // 没有任务时，返回原现场，继续执行被中断的代码。
@@ -159,7 +177,7 @@ unsigned int scheduler_on_yield(unsigned int current_esp)
 
     tasks[current_task].esp = current_esp;
     slice_ticks = 0; // 下一任务从一个完整的新时间片开始。
-    // 休眠任务要继续保持 SLEEPING，不能在切出时立即变回 READY。
+    // 休眠或已退出的任务保持原状态，不能在切出时变回 READY。
     if (tasks[current_task].state == TASK_RUNNING) {
         tasks[current_task].state = TASK_READY;
     }

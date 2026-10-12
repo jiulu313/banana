@@ -24,10 +24,11 @@ extern void enter_user_mode(
 // 演示任务由内核启动代码定义，调度器不关心任务具体做什么。
 static void task_a(void)
 {
-    while (1) {
+    for (unsigned int i = 0; i < 5; i++) {
         vga_putc('A');
         scheduler_sleep(100); // PIT 为 100 Hz，约一秒后再次打印。
     }
+    scheduler_exit(); // 打印五次后结束，不再参与调度。
 }
 
 static void task_b(void)
