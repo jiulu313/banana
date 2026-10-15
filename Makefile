@@ -83,11 +83,11 @@ usercopy.o: kernel/usercopy.c kernel/usercopy.h kernel/paging.h
 	$(CC) $(CFLAGS) -c kernel/usercopy.c -o usercopy.o
 
 
-scheduler.o: kernel/scheduler.c kernel/scheduler.h kernel/task.h kernel/vga.h
+scheduler.o: kernel/scheduler.c kernel/scheduler.h kernel/task.h kernel/irq.h
 	$(CC) $(CFLAGS) -c kernel/scheduler.c -o scheduler.o
 	
 
-task.o: kernel/task.c kernel/task.h
+task.o: kernel/task.c kernel/task.h kernel/scheduler.h
 	$(CC) $(CFLAGS) -c kernel/task.c -o task.o
 
 

@@ -1,4 +1,12 @@
 #include "task.h"
+#include "scheduler.h"
+
+// 所有新任务先进入这里：入口正常 return 后也会自动退出。
+static void task_bootstrap(void (*entry)(void))
+{
+    entry();
+    scheduler_exit();
+}
 
 // 给“新任务”提前伪造一份 CPU 中断现场，
 // 让调度器第一次切到这个任务时，
@@ -9,6 +17,12 @@ static unsigned int prepare_task_stack(
 {
     unsigned int *sp =
         (unsigned int *)(stack + TASK_STACK_SIZE);
+
+    // 模拟 32 位 cdecl 调用：入口 ESP + 4 按 16 字节对齐，
+    // [ESP] 是占位返回地址，[ESP + 4] 是 entry 参数。
+    sp -= 3;
+    *--sp = (unsigned int)entry;
+    *--sp = 0; // bootstrap 永不返回，不会使用这个地址。
 
     /*
      * iret 将来需要：
@@ -24,7 +38,7 @@ static unsigned int prepare_task_stack(
 
     *--sp = 0x202;              // EFLAGS
     *--sp = 0x08;               // CS
-    *--sp = (unsigned int)entry; // EIP
+    *--sp = (unsigned int)task_bootstrap; // EIP
 
     /*
      * popa 将来需要的布局：

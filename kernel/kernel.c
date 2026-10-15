@@ -28,13 +28,22 @@ static void task_a(void)
         vga_putc('A');
         scheduler_sleep(100); // PIT 为 100 Hz，约一秒后再次打印。
     }
-    scheduler_exit(); // 打印五次后结束，不再参与调度。
+    // 正常 return，task_bootstrap 会自动结束当前任务。
+}
+
+static void short_task(void)
+{
+    vga_putc('C');
+    // 打印一次后返回，槽位可供下一次创建复用。
 }
 
 static void task_b(void)
 {
     while (1) {
         vga_putc('B');
+        if (scheduler_spawn(short_task) == 0) {
+            vga_putc('!'); // 创建失败，例如任务槽位已满。
+        }
         scheduler_sleep(200); // 约两秒后再次打印。
     }
 }
