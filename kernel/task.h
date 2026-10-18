@@ -8,6 +8,7 @@
 #define TASK_RUNNING 1
 #define TASK_SLEEPING 2
 #define TASK_EXITED   3
+#define TASK_WAITING  4 // 等待指定子任务退出，不参与调度。
 
 struct task
 {
@@ -18,6 +19,9 @@ struct task
 
     unsigned int state;
     unsigned int sleep_ticks; // 距离恢复就绪还剩多少个时钟 tick。
+    unsigned int parent_id;   // 0 表示无父任务，退出后自动允许复用。
+    unsigned int wait_id;     // 正在等待的子任务 ID，0 表示未等待。
+    int exit_status;          // EXITED 时保留，直到父任务 wait 回收。
 };
 
 /* 调度器在关中断时调用；task、stack、entry 必须有效。

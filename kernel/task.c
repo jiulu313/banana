@@ -78,4 +78,7 @@ void task_create(
     task->esp = prepare_task_stack(stack, entry);
     task->state = TASK_READY;
     task->sleep_ticks = 0;
+    task->parent_id = 0;
+    task->wait_id = 0;
+    task->exit_status = 0;
 }

@@ -6,7 +6,7 @@ void scheduler_init(void);
 
 /* 初始化后、启动阶段关中断或普通任务开中断时调用。
  * 成功返回 1，失败返回 0。入口可以直接 return，自动结束任务。
- * 已退出且切出的任务槽位和静态栈会在创建新任务时复用。
+ * 运行时创建的子任务需要父任务 wait 回收；无父任务的退出任务自动允许复用。
  */
 int scheduler_add_task(void (*entry)(void));
 
@@ -19,6 +19,14 @@ unsigned int scheduler_spawn(void (*entry)(void));
 // 当前普通任务的 ID；启动阶段或 idle 返回 0。
 unsigned int scheduler_current_id(void);
 
+/* 等待指定的直接子任务结束，并回收它；普通任务开中断时调用。
+ * 成功返回 0，status 非空时写入退出码；status 必须指向有效内核内存。
+ * 无效 ID、非子任务、重复回收或非法上下文返回 -1。
+ * 子任务先退出时直接取结果，否则阻塞当前任务，不忙等。
+ * 未回收的退出子任务仍占槽位；父任务退出后子任务变为无父任务。
+ */
+int scheduler_wait(unsigned int id, int *status);
+
 /* 普通内核任务中、开中断时调用；恢复运行后返回 0。
  * 启动线程或关中断/IRQ 上下文调用返回 -1。
  */
@@ -30,9 +38,12 @@ int scheduler_yield(void);
 int scheduler_sleep(unsigned int ticks);
 
 /* 结束当前普通内核任务，永不返回；只允许在开中断的任务上下文调用。
- * idle/启动线程/关中断上下文误用会停机。切出后槽位和栈可供新任务复用。
+ * idle/启动线程/关中断上下文误用会停机。默认退出码为 0。
  */
 void scheduler_exit(void) __attribute__((noreturn));
+
+// 同 exit，但保留指定退出码，供父任务 wait 获取。
+void scheduler_exit_status(int status) __attribute__((noreturn));
 
 // 软件中断入口使用，参数和返回值都是 pusha 现场的地址。
 unsigned int scheduler_on_yield(unsigned int current_esp);

@@ -27,6 +27,7 @@ int main(void)
     task_create(&task, 42, stack, worker);
     unsigned int *frame = (unsigned int *)(stack + TASK_STACK_SIZE) - 16;
     assert(task.id == 42 && task.state == TASK_READY && task.sleep_ticks == 0);
+    assert(task.parent_id == 0 && task.wait_id == 0 && task.exit_status == 0);
     assert(task.esp == (unsigned int)(uintptr_t)frame);
     for (int i = 0; i < 8; i++) assert(frame[i] == 0);
     assert(frame[8] == (unsigned int)(uintptr_t)task_bootstrap);

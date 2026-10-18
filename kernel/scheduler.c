@@ -53,7 +53,8 @@ unsigned int scheduler_spawn(void (*entry)(void))
     int slot;
     for (slot = 1; slot < task_count; slot++) {
         // 退出任务必须已经切出，才能覆盖它的栈。
-        if (slot != current_task && tasks[slot].state == TASK_EXITED) {
+        if (slot != current_task && tasks[slot].state == TASK_EXITED &&
+            tasks[slot].parent_id == 0) {
             break;
         }
     }
@@ -64,6 +65,7 @@ unsigned int scheduler_spawn(void (*entry)(void))
 
     unsigned int id = next_task_id++;
     task_create(&tasks[slot], id, task_stacks[slot], entry);
+    tasks[slot].parent_id = scheduler_current_id();
     if (slot == task_count) {
         task_count++; // 记录已使用槽位的上界，不是活跃任务数。
     }
@@ -100,7 +102,7 @@ int scheduler_yield(void)
     }
 
     // CPU 自动保存 EIP/CS/EFLAGS，入口再 pusha，形成与 IRQ0 相同的现场。
-    __asm__ volatile ("int $0x81" : : : "memory");
+    irq_schedule();
     return 0; // 只有这个任务再次被选中并恢复后，才执行到这里。
 }
 
@@ -127,21 +129,75 @@ int scheduler_sleep(unsigned int ticks)
     }
 
     // 不能调用 scheduler_yield()，因为它会拒绝当前关中断的状态。
-    __asm__ volatile ("int $0x81" : : : "memory");
+    irq_schedule();
     // 此任务恢复时 IF 仍为 0；恢复调用前的标志，重新允许硬件中断。
     irq_restore(flags);
     return 0;
 }
 
+// 关中断时调用：留下退出状态，唤醒父任务，并释放对子任务的所有权。
+static void scheduler_finish_current(int status)
+{
+    struct task *self = &tasks[current_task];
+    self->exit_status = status;
+    self->sleep_ticks = 0;
+    self->wait_id = 0;
+    self->state = TASK_EXITED;
+    for (int i = 1; i < task_count; i++) {
+
+        //当前任务的子任务
+        if (tasks[i].parent_id == self->id) {
+            // 孤儿继续运行；已退出的孤儿可被后续 spawn 直接回收。
+            tasks[i].parent_id = 0;
+        }
+
+        // 唤醒正在等待当前任务退出的父任务。
+        if (tasks[i].id == self->parent_id &&
+            tasks[i].state == TASK_WAITING && tasks[i].wait_id == self->id) {
+            tasks[i].state = TASK_READY;
+        }
+    }
+}
+
+int scheduler_wait(unsigned int id, int *status)
+{
+    unsigned int flags = irq_save();
+    if (current_task <= 0 || !(flags & 0x200) || id == 0) {
+        irq_restore(flags);
+        return -1;
+    }
+    struct task *self = &tasks[current_task];
+    for (int i = 1; i < task_count; i++) {
+        struct task *child = &tasks[i];
+        if (child->id != id || child->parent_id != self->id) {
+            continue;
+        }
+        // 检查退出状态和进入等待必须原子完成，避免错过子任务的唤醒。
+        while (child->state != TASK_EXITED) {
+            self->wait_id = id;
+            self->state = TASK_WAITING;
+            irq_schedule();
+        }
+        if (status != 0) {
+            *status = child->exit_status;
+        }
+        self->wait_id = 0;
+        child->parent_id = 0; // 已取走结果，允许复用；重复 wait 将失败。
+        irq_restore(flags);
+        return 0;
+    }
+    irq_restore(flags);
+    return -1; // 不存在、不是自己的子任务，或已经回收。
+}
+
 // 当前任务退出，调度器选择下一个任务运行。
-void scheduler_exit(void)
+void scheduler_exit_status(int status)
 {
     // 和休眠一样，标记状态与切出之间不能被时钟中断打断。
     unsigned int flags = irq_save();
     if (current_task > 0 && (flags & 0x200)) {
-        tasks[current_task].sleep_ticks = 0;
-        tasks[current_task].state = TASK_EXITED;
-        __asm__ volatile ("int $0x81" : : : "memory");
+        scheduler_finish_current(status);
+        irq_schedule();
         // 正常情况下不会回来：调度器只选择 READY 任务。
     }
 
@@ -149,6 +205,11 @@ void scheduler_exit(void)
     while (1) {
         __asm__ volatile ("cli; hlt");
     }
+}
+
+void scheduler_exit(void)
+{
+    scheduler_exit_status(0);
 }
 
 unsigned int scheduler_on_tick(unsigned int current_esp)

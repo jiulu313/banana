@@ -34,15 +34,24 @@ static void task_a(void)
 static void short_task(void)
 {
     vga_putc('C');
-    // 打印一次后返回，槽位可供下一次创建复用。
+    scheduler_sleep(10);
+    scheduler_exit_status(42); // 父任务将读取这个结果。
 }
 
 static void task_b(void)
 {
     while (1) {
         vga_putc('B');
-        if (scheduler_spawn(short_task) == 0) {
+        unsigned int child = scheduler_spawn(short_task);
+        if (child == 0) {
             vga_putc('!'); // 创建失败，例如任务槽位已满。
+        } else {
+            int status;
+            if (scheduler_wait(child, &status) == 0 && status == 42) {
+                vga_putc('W'); // 子任务结束并完成回收，才打印 W。
+            } else {
+                vga_putc('!');
+            }
         }
         scheduler_sleep(200); // 约两秒后再次打印。
     }
