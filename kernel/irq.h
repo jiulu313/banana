@@ -39,9 +39,21 @@ static inline void irq_restore(unsigned int flags)
     __asm__ volatile ("pushl %0; popfl" : : "r"(flags) : "memory", "cc");
 }
 
-// 保存/恢复任务现场由 isr81 完成。
+/* 触发 0x81 软件中断，进入 isr81，由 scheduler_on_yield() 选择任务。
+ * CPU 和 isr81 保存当前现场；isr81 换栈后通过 popa、iret 恢复选中任务。
+ * 当前任务再次被选中时，才从 int 后面继续；已退出的任务不会再返回。
+ * 若调度器再次选中当前任务，也可能立即继续执行。
+ *
+ * 这是调度器内部的底层操作，不检查调用条件，也不设置休眠/退出状态。
+ * 普通任务应调用 scheduler_yield()/scheduler_sleep()/scheduler_wait() 等接口。
+ * IF 为 0 时仍可执行 int；恢复当前任务时 IF 恢复为执行 int 前的值，
+ * 因此调用者若先执行 irq_save()，返回后仍需 irq_restore()。
+ * 软件中断不推进时钟计数，也不需要向 PIC 发送 EOI。
+ */
 static inline void irq_schedule(void)
 {
+    // $0x81 是 AT&T 语法中的立即数中断号；无 C 输入、输出操作数。
+    // "memory" 让编译器考虑其他任务在切换期间可能修改内存。
     __asm__ volatile ("int $0x81" : : : "memory");
 }
 

@@ -22,7 +22,7 @@ kernel_entry.o: kernel/kernel_entry.asm
 	$(NASM) -f elf32 kernel/kernel_entry.asm -o kernel_entry.o
 
 
-kernel.o: kernel/kernel.c
+kernel.o: kernel/kernel.c kernel/fs.h
 	$(CC) $(CFLAGS) -c kernel/kernel.c -o kernel.o
 
 vga.o: kernel/vga.c kernel/vga.h
@@ -46,8 +46,11 @@ keyboard.o: kernel/keyboard.c kernel/keyboard.h kernel/io.h kernel/pic.h kernel/
 	$(CC) $(CFLAGS) -c kernel/keyboard.c -o keyboard.o
 
 
-shell.o: kernel/shell.c kernel/shell.h kernel/vga.h
+shell.o: kernel/shell.c kernel/shell.h kernel/vga.h kernel/fs.h
 	$(CC) $(CFLAGS) -c kernel/shell.c -o shell.o
+
+fs.o: kernel/fs.c kernel/fs.h kernel/irq.h
+	$(CC) $(CFLAGS) -c kernel/fs.c -o fs.o
 
 memory.o: kernel/memory.c kernel/memory.h
 	$(CC) $(CFLAGS) -c kernel/memory.c -o memory.o
@@ -91,7 +94,7 @@ task.o: kernel/task.c kernel/task.h kernel/scheduler.h
 	$(CC) $(CFLAGS) -c kernel/task.c -o task.o
 
 
-kernel.elf: task.o kernel_entry.o kernel.o vga.o idt.o interrupt.o usercopy.o scheduler.o pic.o timer.o keyboard.o gdt.o tss.o user_mode.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o  syscall.o linker.ld
+kernel.elf: fs.o task.o kernel_entry.o kernel.o vga.o idt.o interrupt.o usercopy.o scheduler.o pic.o timer.o keyboard.o gdt.o tss.o user_mode.o gdt_flush.o shell.o memory.o e820.o pmm.o paging.o  syscall.o linker.ld
 	$(LD) $(LDFLAGS) \
 		-o kernel.elf \
 		kernel_entry.o \
@@ -103,6 +106,7 @@ kernel.elf: task.o kernel_entry.o kernel.o vga.o idt.o interrupt.o usercopy.o sc
 		timer.o \
 		keyboard.o \
 		shell.o \
+		fs.o \
 		memory.o \
 		e820.o \
 		pmm.o \
@@ -163,6 +167,7 @@ clean:
 		timer.o \
 		keyboard.o \
 		shell.o \
+		fs.o \
 		memory.o \
 		e820.o \
 		pmm.o \

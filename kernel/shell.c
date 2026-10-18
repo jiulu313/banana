@@ -4,11 +4,13 @@
 #include "memory.h"
 #include "e820.h"
 #include "pmm.h"
+#include "fs.h"
 
 #define INPUT_BUFFER_SIZE 128
 
 static char input_buffer[INPUT_BUFFER_SIZE];
 static int input_length = 0;
+static int input_overflow = 0;
 
 //判断两个字符串是否相等
 //相等返回 1 ，不相等返回 0
@@ -27,6 +29,104 @@ static int str_equal(const char *a, const char *b)
 }
 
 
+static const char *skip_space(const char *s)
+{
+    while (*s == ' ' || *s == '\t') s++;
+    return s;
+}
+
+// 取一个以空格分隔的参数；过长时报错，不截断后执行另一个文件名。
+static int shell_token(const char **cursor, char *out, unsigned int capacity)
+{
+    const char *s = skip_space(*cursor);
+    unsigned int n = 0;
+    while (*s != '\0' && *s != ' ' && *s != '\t') {
+        if (n + 1 >= capacity) return -1;
+        out[n++] = *s++;
+    }
+    out[n] = '\0';
+    *cursor = s;
+    return (int)n;
+}
+
+static void shell_fs_error(int result)
+{
+    if (result >= 0) return;
+    switch (result) {
+    case FS_ERR_INVALID: vga_write("fs: invalid name or argument\n"); break;
+    case FS_ERR_NOT_FOUND: vga_write("fs: file not found\n"); break;
+    case FS_ERR_EXISTS: vga_write("fs: file already exists\n"); break;
+    case FS_ERR_FULL: vga_write("fs: file table full\n"); break;
+    case FS_ERR_TOO_LARGE: vga_write("fs: file exceeds 1024 bytes\n"); break;
+    default: vga_write("fs: error\n"); break;
+    }
+}
+
+// 返回 1 表示已处理文件命令；其他命令交给原来的 shell_execute。
+static int shell_fs_execute(const char *line)
+{
+    char command[16];
+    const char *args = line;
+    if (shell_token(&args, command, sizeof(command)) <= 0) return 0;
+    if (str_equal(command, "ls")) {
+        if (*skip_space(args) != '\0') {
+            vga_write("usage: ls\n");
+            return 1;
+        }
+        struct fs_info info;
+        int count = 0;
+        for (unsigned int slot = 0; slot < FS_MAX_FILES; slot++) {
+            if (fs_list(slot, &info) != 1) continue;
+            vga_write(info.name);
+            vga_write("  size=");
+            vga_write_hex(info.size);
+            vga_write(" bytes\n");
+            count++;
+        }
+        if (count == 0) vga_write("(empty)\n");
+        return 1;
+    }
+    int write = str_equal(command, "write");
+    int append = str_equal(command, "append");
+    int touch = str_equal(command, "touch");
+    int remove = str_equal(command, "rm");
+    int cat = str_equal(command, "cat");
+    if (!write && !append && !touch && !remove && !cat) return 0;
+
+    char name[FS_NAME_MAX + 2]; // 允许可选的前导 /。
+    if (shell_token(&args, name, sizeof(name)) <= 0) {
+        vga_write("fs: missing or too long filename\n");
+        return 1;
+    }
+    args = skip_space(args);
+    if (!write && !append && *args != '\0') {
+        vga_write("fs: too many arguments\n");
+        return 1;
+    }
+    if (write || append) {
+        unsigned int length = 0;
+        while (args[length] != '\0') length++;
+        shell_fs_error(write ? fs_write(name, args, length) : fs_append(name, args, length));
+    } else if (touch) {
+        int result = fs_create(name);
+        if (result != FS_ERR_EXISTS) shell_fs_error(result); // touch 不清空已有文件。
+    } else if (remove) {
+        shell_fs_error(fs_remove(name));
+    } else {
+        // 小块读取，避免在任务的 4 KiB 栈上放整个文件。
+        char buffer[64];
+        unsigned int offset = 0;
+        int count;
+        while ((count = fs_read(name, offset, buffer, sizeof(buffer))) > 0) {
+            for (int i = 0; i < count; i++) vga_putc(buffer[i]);
+            offset += (unsigned int)count;
+        }
+        if (count < 0) shell_fs_error(count);
+        else vga_putc('\n');
+    }
+    return 1;
+}
+
 //shell提示符
 static void shell_prompt(void)
 {
@@ -36,11 +136,16 @@ static void shell_prompt(void)
 //判断是哪个命令，走相应的流程
 static void shell_execute(const char *command)
 {
+    if (shell_fs_execute(command)) return;
     if (str_equal(command, "help")) {
         vga_write("commands:\n");
         vga_write("  help\n");
         vga_write("  clear\n");
         vga_write("  version\n");
+        vga_write("  ls | touch NAME | cat NAME | rm NAME\n");
+        vga_write("  write NAME TEXT | append NAME TEXT\n");
+        vga_write("RAMFS: 16 files, 1024 bytes/file; lost on reboot.\n");
+        vga_write("Use touch first. write replaces; empty TEXT clears.\n");
     } else if (str_equal(command, "clear")) {
         vga_clear();
     } else if (str_equal(command, "version")) {
@@ -157,6 +262,7 @@ static void shell_execute(const char *command)
 void shell_init(void)
 {
     input_length = 0;
+    input_overflow = 0;
 
     vga_write("banana shell\n");
     shell_prompt();
@@ -170,9 +276,11 @@ void shell_input_char(char c)
 
         input_buffer[input_length] = '\0';
 
-        shell_execute(input_buffer);
+        if (input_overflow) vga_write("input too long; command discarded\n");
+        else shell_execute(input_buffer);
 
         input_length = 0;
+        input_overflow = 0;
 
         shell_prompt();
 
@@ -194,5 +302,8 @@ void shell_input_char(char c)
         input_length++;
 
         vga_putc(c);
+    } else {
+        // 不执行被截断的 write/rm 等命令；回车后重新输入整行。
+        input_overflow = 1;
     }
 }

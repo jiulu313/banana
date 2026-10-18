@@ -8,6 +8,7 @@
 #include "paging.h"
 #include "gdt.h"
 #include "scheduler.h"
+#include "fs.h"
 
 
 #define USER_CODE_VA    0x40000000
@@ -133,6 +134,7 @@ void kernel_main(void)
      * 一旦下面 enter_user_mode() 成功执行，
      * kernel_main 不会继续往后普通执行。
      */
+    fs_init(); // 内存文件系统必须在开启键盘中断前准备好。
     shell_init();
 
 
